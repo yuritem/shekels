@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "shekels"
+version = "0.1.0"
+description = ""
+authors = ["yuritem <yuritemiraev@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+aiogram = "^3.2.0"
+asyncpg = "^0.29.0"
+sqlalchemy = "^2.0.23"
+asyncio = "^3.4.3"
+pydantic = "^2.5.2"
+pydantic-settings = "^2.1.0"
+tenacity = "^8.2.3"
+redis = "^5.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
