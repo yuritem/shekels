@@ -2,8 +2,10 @@ from aiogram import Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
-from sqlalchemy.ext.asyncio import AsyncSession
 
+from bot.db.models import User
+from bot.filters.filters import AliasableSubtypeFilter, NumberFilter, ShortNameFilter
+from bot.repo.repository import Repository
 from bot.states import AliasStates, TransactionStates
 
 router = Router()
@@ -13,44 +15,92 @@ router = Router()
     Command("add_alias"),
     TransactionStates.waiting_for_new_transaction
 )
-async def cmd_add_alias(message: Message, state: FSMContext, session: AsyncSession):
+async def cmd_add_alias(message: Message, state: FSMContext):
     """Handles /add_alias command"""
-    await message.answer("Provide an aliasable sybtype: 'storage', 'category', or 'currency'.")  # todo
+    await message.answer("What is the alias for - storage, category, or currency?")
     await state.set_state(AliasStates.waiting_for_aliasable_subtype)
 
 
-@router.message(AliasStates.waiting_for_aliasable_subtype)
-async def aliasable_subtype(message: Message, state: FSMContext):
+@router.message(
+    AliasStates.waiting_for_aliasable_subtype,
+    AliasableSubtypeFilter()
+)
+async def aliasable_subtype(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles aliasable_subtype entry after /add_alias command"""
-    subtype = message.text
+    subtype = message.text.lower()
+    await state.update_data({"aliasable_subtype": subtype})
     if subtype in ['storage', 'category']:
-        await message.answer("Provide aliasable number.")  # todo
+        if subtype == 'storage':
+            aliasables = await repo.get_storages_for_user(user.user_id)
+        else:
+            aliasables = await repo.get_categories_for_user(user.user_id)
+        aliasables_str = '\n'.join([
+            f"{a.number}. {a.name}"
+            for a in aliasables
+        ])
+        await message.answer(f"Provide {subtype} number:\n\n{aliasables_str}")
         await state.set_state(AliasStates.waiting_for_aliasable_number)
     elif subtype == 'currency':
-        await message.answer("Provide currency alphacode.")  # todo
+        await message.answer("Provide 3-letter currency alphacode.")
         await state.set_state(AliasStates.waiting_for_currency_alphacode)
     else:
-        await message.answer("Unknown type. Try again. Provide an aliasable sybtype.")
+        # todo: log
+        await message.answer("Unknown type. Try again.")
 
 
-@router.message(AliasStates.waiting_for_aliasable_number)
-async def aliasable_number(message: Message, state: FSMContext):
+@router.message(
+    AliasStates.waiting_for_aliasable_number,
+    NumberFilter()
+)
+async def aliasable_number_to_add(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles aliasable_number entry in the process of /add_alias command"""
-    await message.answer("Provide alias name.")
-    await state.set_state(AliasStates.waiting_for_alias_name)
+    aliasable_number = int(message.text)
+    state_data = await state.get_data()
+    subtype = state_data.get("aliasable_subtype")
+    if subtype == 'storage':
+        max_aliasable_number = await repo.get_max_storage_number_for_user(user.user_id)
+    else:
+        max_aliasable_number = await repo.get_max_category_number_for_user(user.user_id)
+    if aliasable_number <= max_aliasable_number:
+        await state.update_data({"aliasable_number": aliasable_number})
+        await message.answer("Provide your alias.")
+        await state.set_state(AliasStates.waiting_for_alias_name)
+    else:
+        pass  # Filter behavior
 
 
 @router.message(AliasStates.waiting_for_currency_alphacode)
-async def currency_alphacode(message: Message, state: FSMContext):
+async def currency_alphacode(message: Message, state: FSMContext, repo: Repository):
     """Handles currency_alphacode entry in the process of /add_alias command"""
-    await message.answer("Provide alias name.")
-    await state.set_state(AliasStates.waiting_for_alias_name)
+    alpha_code = message.text.upper()
+    currency = await repo.get_currency_by_alpha_code(alpha_code=alpha_code)
+    if currency:
+        await state.update_data({"currency_id": currency.currency_id})
+        await message.answer("Provide your alias.")
+        await state.set_state(AliasStates.waiting_for_alias_name)
+    else:
+        pass  # Filter behavior
 
 
-@router.message(AliasStates.waiting_for_alias_name)
-async def alias_name(message: Message, state: FSMContext):
+@router.message(
+    AliasStates.waiting_for_alias_name,
+    ShortNameFilter()
+)
+async def alias_name(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles alias_name entry in the process of /add_alias command"""
-    await message.answer("Alias creation processed.")
+    name = message.text
+    state_data = await state.get_data()
+    aliasable_number = state_data.get("aliasable_number", None)
+    currency_id = state_data.get("currency_id", None)
+    subtype = state_data.get("aliasable_subtype")
+    await repo.add_alias(
+        user_id=user.user_id,
+        subtype=subtype,
+        name=name,
+        aliasable_number=aliasable_number,
+        currency_id=currency_id
+    )
+    await message.answer("Alias created!")
     await state.set_state(TransactionStates.waiting_for_new_transaction)
 
 
@@ -64,8 +114,16 @@ async def cmd_delete_alias(message: Message, state: FSMContext):
     await state.set_state(AliasStates.waiting_for_alias_number_to_delete)
 
 
-@router.message(AliasStates.waiting_for_alias_number_to_delete)
-async def alias_number_to_delete(message: Message, state: FSMContext):
-    """Handles alias_number entry after /delete_alias command"""
-    await message.answer("Alias deletion processed.")
-    await state.set_state(TransactionStates.waiting_for_new_transaction)
+@router.message(
+    AliasStates.waiting_for_alias_number_to_delete,
+    NumberFilter()
+)
+async def alias_number_to_delete(message: Message, state: FSMContext, repo: Repository, user: User):
+    """Handles number entry after /delete_alias command"""
+    alias_number = int(message.text)
+    max_alias_number = await repo.get_max_alias_number_for_user(user.user_id)
+    if alias_number <= max_alias_number:
+        await message.answer("Alias deleted.")
+        await state.set_state(TransactionStates.waiting_for_new_transaction)
+    else:
+        pass  # Filter behavior

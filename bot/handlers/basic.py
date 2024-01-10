@@ -5,12 +5,11 @@ from aiogram import Router
 from aiogram.filters import CommandStart, Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.db.models import User
+from bot.repo.repository import Repository
 from bot.states import TransactionStates
-from bot.filters.transaction import TransactionFilter
-
+from bot.filters.filters import TransactionFilter, YesNoFilter
 
 router: Router = Router()
 logger = logging.getLogger(__name__)
@@ -20,15 +19,11 @@ logger = logging.getLogger(__name__)
     CommandStart(),
     StateFilter(None)
 )
-async def cmd_start(message: Message, state: FSMContext, session: AsyncSession):
+async def cmd_start(message: Message, state: FSMContext, repo: Repository):
     """Handles /start command"""
-    user = User(
-        chat_id=message.chat.id,
-        telegram_id=message.from_user.id,
-        user_firstname=message.from_user.first_name,
-        banned=False
-    )
-    session.add(user)  # merge?!
+    user_id = message.from_user.id
+    first_name = message.from_user.first_name
+    user = await repo.add_user(telegram_id=user_id, first_name=first_name, banned=False)
     logger.info(f"Added {user} into database.")
     await message.answer("Start message.")
     await state.set_state(TransactionStates.waiting_for_new_transaction)
@@ -70,10 +65,17 @@ async def transaction(message: Message):
 @router.message(Command("help"))
 async def cmd_help(message: Message):
     """Handles /help command"""
-    await message.answer("Help message.")
+    await message.answer("Category & Storage names format (under 40 characters):\n"
+                         "1+ words consisting of letters, numbers, '-', and '_' separated with spaces.\n\n"
+                         "All yes/no entry format - one of the following (case insensitive):\n"
+                         f"{', '.join(YesNoFilter.map.keys())}\n"
+                         "Aliases: 1 word consisting of letters and numbers (under 10 characters)")  # todo
 
 
-@router.message(Command("cancel"))
+@router.message(
+    Command("cancel"),
+    ~TransactionStates.waiting_for_new_transaction
+)
 async def cmd_cancel(message: Message, state: FSMContext):
     """Handles /cancel command"""
     await message.answer("Cancelled.")

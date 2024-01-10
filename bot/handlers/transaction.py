@@ -4,7 +4,6 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
 from bot.states import TransactionStates
-from bot.filters import TransactionFilter
 
 router = Router()
 

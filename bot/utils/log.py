@@ -12,7 +12,7 @@ def setup_logging(
 ):
     """
     :param config: pydantic configuration object
-    :param logging_level_sqlalchemy: logging level for sqlalchemy. Note: echo=True will still print to stdout
+    :param logging_level_sqlalchemy: logging level for sqlalchemy. Note: echo=True, echo="debug" will still log to stdout
     :param logging_level_root: logging level for the whole application
     :return:
     """
@@ -22,7 +22,7 @@ def setup_logging(
     logger.setLevel(logging_level_root)
 
     formatter = logging.Formatter(
-        fmt="%(asctime)s.%(msecs)03d | %(name)s | %(levelname)s | %(message)s",
+        fmt="%(asctime)s.%(msecs)03d | %(name)s | %(funcName)s | %(levelname)s | %(message)s",
         datefmt="%Y.%m.%d %H:%M:%S"
     )
 

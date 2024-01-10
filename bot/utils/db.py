@@ -1,12 +1,12 @@
+import os
 import json
 import logging
-import os
 
 from typing import List, Dict, Union
+
 from sqlalchemy import MetaData, inspect
 from sqlalchemy.schema import ForeignKeyConstraint, Table, DropConstraint, DropTable
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, AsyncEngine
-from sqlalchemy.sql.expression import func
 from sqlalchemy.dialects.postgresql import insert
 
 from bot.db.models import Currency, Aliasable
@@ -27,11 +27,7 @@ def get_currency_data(currency_json_path: Union[os.PathLike, str, bytes] = CURRE
     return currency_data
 
 
-async def init_database(
-        metadata: MetaData,
-        engine: AsyncEngine,
-        session_pool: async_sessionmaker[AsyncSession]
-) -> None:
+async def init_database(metadata: MetaData, engine: AsyncEngine, session_pool: async_sessionmaker[AsyncSession]) -> None:
     table_names = await get_table_names(engine=engine)
     if not table_names:
         logger.info("Creating all tables...")
@@ -71,11 +67,3 @@ async def drop_all_tables(engine: AsyncEngine):
         for table in tables:
             await conn.execute(DropTable(table))
     logger.info("Dropped all tables.")
-
-
-async def get_last_row(session: AsyncSession, table: Table):
-    primary_keys = inspect(table).primary_key
-    if len(primary_keys) > 1:
-        raise ValueError("Table got more than 1 primary key.")
-    stmt = func.max()
-    res = await session.execute(stmt)

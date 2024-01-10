@@ -1,5 +1,3 @@
-# todo: is PK primary key autoincrement flag excessive?
-
 import datetime
 
 from typing import List, Literal, get_args
@@ -19,22 +17,20 @@ class User(Base):
     user_id: Mapped[int] = mapped_column(
         INTEGER,
         Identity(always=True, start=1, increment=1),
-        primary_key=True,
-        autoincrement=True
+        primary_key=True
     )
     telegram_id: Mapped[int] = mapped_column(BIGINT, unique=True, nullable=False)
-    chat_id: Mapped[int] = mapped_column(BIGINT, unique=True, nullable=False)
     first_name: Mapped[str] = mapped_column(VARCHAR(64), nullable=False)
     banned: Mapped[bool] = mapped_column(BOOLEAN, nullable=False)
 
-    aliases: List["Alias"] = relationship("Alias", back_populates="user")
-    categories: List["Category"] = relationship("Category", back_populates="user")
-    storages: List["Storage"] = relationship("Storage", back_populates="user")
-    transactions: List["Transaction"] = relationship("Transaction", back_populates="user")
+    aliases: Mapped[List["Alias"]] = relationship("Alias", back_populates="user")
+    categories: Mapped[List["Category"]] = relationship("Category", back_populates="user")
+    storages: Mapped[List["Storage"]] = relationship("Storage", back_populates="user")
+    transactions: Mapped[List["Transaction"]] = relationship("Transaction", back_populates="user")
 
     def __repr__(self) -> str:
         return (f"User(user_id={self.user_id!r}, telegram_id={self.telegram_id!r}, "
-                f"chat_id={self.chat_id!r}, banned={self.banned!r})")
+                f"first_name={self.first_name!r}, banned={self.banned!r})")
 
 
 class Aliasable(Base):
@@ -44,8 +40,7 @@ class Aliasable(Base):
     aliasable_id: Mapped[int] = mapped_column(
         INTEGER,
         Identity(always=True, start=1, increment=1),
-        primary_key=True,
-        autoincrement=True
+        primary_key=True
     )
     aliasable_subtype: Mapped[AliasableSubtype] = mapped_column(
         ENUM(
@@ -66,19 +61,18 @@ class Alias(Base):
     alias_id: Mapped[int] = mapped_column(
         INTEGER,
         Identity(always=True, start=1, increment=1),
-        primary_key=True,
-        autoincrement=True
+        primary_key=True
     )
     user_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"))
     aliasable_id: Mapped[int] = mapped_column(ForeignKey("aliasable.aliasable_id"))
-    alias_number: Mapped[int] = mapped_column(INTEGER, nullable=False)
-    alias: Mapped[str] = mapped_column(VARCHAR(10), nullable=False)
+    number: Mapped[int] = mapped_column(INTEGER, nullable=False)
+    name: Mapped[str] = mapped_column(VARCHAR(10), nullable=False)
 
     user: Mapped["User"] = relationship("User", back_populates="aliases")
 
     def __repr__(self) -> str:
         return (f"Alias(alias_id={self.alias_id!r}), user_id={self.user_id!r}, "
-                f"aliasable_id={self.aliasable_id!r}, alias_number={self.alias_number!r}, alias={self.alias!r}")
+                f"aliasable_id={self.aliasable_id!r}, number={self.number!r}, name={self.name!r}")
 
 
 class Currency(Base):
@@ -87,8 +81,7 @@ class Currency(Base):
     currency_id: Mapped[int] = mapped_column(
         INTEGER,
         Identity(always=True, start=1, increment=1),
-        primary_key=True,
-        autoincrement=True
+        primary_key=True
     )
     aliasable_id: Mapped[int] = mapped_column(ForeignKey("aliasable.aliasable_id"))
     name: Mapped[str] = mapped_column(VARCHAR(40), nullable=False)
@@ -106,12 +99,11 @@ class Storage(Base):
     storage_id: Mapped[int] = mapped_column(
         INTEGER,
         Identity(always=True, start=1, increment=1),
-        primary_key=True,
-        autoincrement=True
+        primary_key=True
     )
     user_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"))
     aliasable_id: Mapped[int] = mapped_column(ForeignKey("aliasable.aliasable_id"))
-    storage_number: Mapped[int] = mapped_column(INTEGER, nullable=False)
+    number: Mapped[int] = mapped_column(INTEGER, nullable=False)
     name: Mapped[str] = mapped_column(VARCHAR(40), nullable=False)
     is_credit: Mapped[bool] = mapped_column(BOOLEAN, nullable=False)
     multicurrency: Mapped[bool] = mapped_column(BOOLEAN, nullable=False)
@@ -120,19 +112,17 @@ class Storage(Base):
 
     def __repr__(self) -> str:
         return (f"Storage(storage_id={self.storage_id!r}, user_id={self.user_id!r}, "
-                f"aliasable_id={self.aliasable_id!r}, storage_number={self.storage_number!r}, name={self.name!r}")
+                f"aliasable_id={self.aliasable_id!r}, number={self.number!r}, name={self.name!r}")
 
 
 class StorageCredit(Base):
     __tablename__ = "credit"
 
     storage_id: Mapped[int] = mapped_column(ForeignKey("storage.storage_id"), primary_key=True)
-    due_day: Mapped[int] = mapped_column(INTEGER, nullable=False)  # todo: properly handle 30/31 and February (app-side)
-    limit: Mapped[float] = mapped_column(MONEY, nullable=False)
+    billing_day: Mapped[int] = mapped_column(INTEGER, nullable=False)
 
     def __repr__(self):
-        return (f"StorageCredit(storage_id={self.storage_id!r}, "
-                f"due_day={self.due_day!r}, limit={self.limit!r})")
+        return f"StorageCredit(storage_id={self.storage_id!r}, billing_day={self.billing_day!r}"
 
 
 class StorageCurrency(Base):
@@ -151,12 +141,11 @@ class Category(Base):
     category_id: Mapped[int] = mapped_column(
         INTEGER,
         Identity(always=True, start=1, increment=1),
-        primary_key=True,
-        autoincrement=True
+        primary_key=True
     )
     user_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"))
     aliasable_id: Mapped[int] = mapped_column(ForeignKey("aliasable.aliasable_id"))
-    category_number: Mapped[int] = mapped_column(INTEGER, nullable=False)
+    number: Mapped[int] = mapped_column(INTEGER, nullable=False)
     name: Mapped[str] = mapped_column(VARCHAR(40), nullable=False)
     factor_in: Mapped[bool] = mapped_column(BOOLEAN, nullable=False)
 
@@ -164,37 +153,55 @@ class Category(Base):
 
     def __repr__(self) -> str:
         return (f"Category(category_id={self.category_id!r}), user_id={self.user_id!r}, "
-                f"aliasable_id={self.aliasable_id!r}, category_number={self.category_number!r}, name={self.name!r})")
+                f"aliasable_id={self.aliasable_id!r}, number={self.number!r}, name={self.name!r})")
 
 
-class DefaultCurrency(Base):
-    __tablename__ = "default_currency"
+class UserDefault(Base):
+    __tablename__ = "user_default"
 
-    user_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"), primary_key=True, unique=True)
-    currency_id: Mapped[int] = mapped_column(ForeignKey("currency.currency_id"), primary_key=True)
-
-    def __repr__(self):
-        return f"DefaultCurrency(user_id={self.user_id!r}, currency_id={self.currency_id!r})"
-
-
-class DefaultCategory(Base):
-    __tablename__ = "default_category"
-
-    user_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"), primary_key=True, unique=True)
-    category_id: Mapped[int] = mapped_column(ForeignKey("category.category_id"), primary_key=True)
+    user_default_id: Mapped[int] = mapped_column(
+        INTEGER,
+        Identity(always=True, start=1, increment=1),
+        primary_key=True
+    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"))
+    category_id: Mapped[int] = mapped_column(ForeignKey("category.category_id"), nullable=True)
+    storage_id: Mapped[int] = mapped_column(ForeignKey("storage.storage_id"), nullable=True)
+    currency_id: Mapped[int] = mapped_column(ForeignKey("currency.currency_id"), nullable=True)
 
     def __repr__(self):
-        return f"DefaultCategory(user_id={self.user_id!r}, category_id={self.category_id!r})"
+        return (f"UserDefault(user_id={self.user_id!r}, category_id={self.category_id!r}, "
+                f"storage_id={self.storage_id!r}, currency_id={self.currency_id!r})")
 
 
-class DefaultStorage(Base):
-    __tablename__ = "default_storage"
-
-    user_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"), primary_key=True, unique=True)
-    storage_id: Mapped[int] = mapped_column(ForeignKey("storage.storage_id"), primary_key=True)
-
-    def __repr__(self):
-        return f"DefaultStorage(user_id={self.user_id!r}, storage_id={self.storage_id!r})"
+# class DefaultCurrency(Base):
+#     __tablename__ = "default_currency"
+#
+#     user_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"), primary_key=True, unique=True)
+#     currency_id: Mapped[int] = mapped_column(ForeignKey("currency.currency_id"), primary_key=True)
+#
+#     def __repr__(self):
+#         return f"DefaultCurrency(user_id={self.user_id!r}, currency_id={self.currency_id!r})"
+#
+#
+# class DefaultCategory(Base):
+#     __tablename__ = "default_category"
+#
+#     user_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"), primary_key=True, unique=True)
+#     category_id: Mapped[int] = mapped_column(ForeignKey("category.category_id"), primary_key=True)
+#
+#     def __repr__(self):
+#         return f"DefaultCategory(user_id={self.user_id!r}, category_id={self.category_id!r})"
+#
+#
+# class DefaultStorage(Base):
+#     __tablename__ = "default_storage"
+#
+#     user_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"), primary_key=True, unique=True)
+#     storage_id: Mapped[int] = mapped_column(ForeignKey("storage.storage_id"), primary_key=True)
+#
+#     def __repr__(self):
+#         return f"DefaultStorage(user_id={self.user_id!r}, storage_id={self.storage_id!r})"
 
 
 class Transaction(Base):
@@ -203,8 +210,7 @@ class Transaction(Base):
     transaction_id: Mapped[int] = mapped_column(
         BIGINT,
         Identity(always=True, start=1, increment=1),
-        primary_key=True,
-        autoincrement=True
+        primary_key=True
     )
     user_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"))
     storage_id: Mapped[int] = mapped_column(ForeignKey("storage.storage_id"))

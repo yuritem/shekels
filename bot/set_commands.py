@@ -14,7 +14,10 @@ COMMANDS = {
     "edit_storage": "Edit existing storage",
     "delete_storage": "Delete existing storage",
     "add_alias": "Add new alias",
-    "delete_alias": "Delete existing alias"
+    "delete_alias": "Delete existing alias",
+    "set_default_category": "Set default category",  # add to handlers
+    "set_default_storage": "Set default storage",  # determine behavior
+    "set_default_currency": "Set default currency"  # resolve conflicting behavior with storage currency
 }
 
 

@@ -4,12 +4,17 @@ from aiogram.fsm.state import StatesGroup, State
 class StorageStates(StatesGroup):
     # add
     waiting_for_new_storage_name = State()
-    waiting_for_new_storage_storage_type = State()
+    waiting_for_new_storage_is_credit_flag = State()
+    waiting_for_new_storage_billing_day = State()
+    waiting_for_new_storage_multicurrency_flag = State()
+    waiting_for_new_storage_currency_alphacode = State()
     # edit
     waiting_for_storage_number_to_edit = State()
     waiting_for_edited_storage_name = State()
     # delete
     waiting_for_storage_number_to_delete = State()
+    # set default
+    waiting_for_storage_number_to_set_default = State()
 
 
 class CategoryStates(StatesGroup):
@@ -22,6 +27,8 @@ class CategoryStates(StatesGroup):
     waiting_for_edited_category_factor_in = State()
     # delete
     waiting_for_category_number_to_delete = State()
+    # set default
+    waiting_for_category_number_to_set_default = State()
 
 
 class AliasStates(StatesGroup):
