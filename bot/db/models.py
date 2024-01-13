@@ -112,11 +112,12 @@ class Storage(Base):
 
     def __repr__(self) -> str:
         return (f"Storage(storage_id={self.storage_id!r}, user_id={self.user_id!r}, "
-                f"aliasable_id={self.aliasable_id!r}, number={self.number!r}, name={self.name!r}")
+                f"aliasable_id={self.aliasable_id!r}, number={self.number!r}, name={self.name!r}, "
+                f"is_credit={self.is_credit!r}, multicurrency={self.multicurrency!r}")
 
 
 class StorageCredit(Base):
-    __tablename__ = "credit"
+    __tablename__ = "storage_credit"
 
     storage_id: Mapped[int] = mapped_column(ForeignKey("storage.storage_id"), primary_key=True)
     billing_day: Mapped[int] = mapped_column(INTEGER, nullable=False)
@@ -172,36 +173,6 @@ class UserDefault(Base):
     def __repr__(self):
         return (f"UserDefault(user_id={self.user_id!r}, category_id={self.category_id!r}, "
                 f"storage_id={self.storage_id!r}, currency_id={self.currency_id!r})")
-
-
-# class DefaultCurrency(Base):
-#     __tablename__ = "default_currency"
-#
-#     user_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"), primary_key=True, unique=True)
-#     currency_id: Mapped[int] = mapped_column(ForeignKey("currency.currency_id"), primary_key=True)
-#
-#     def __repr__(self):
-#         return f"DefaultCurrency(user_id={self.user_id!r}, currency_id={self.currency_id!r})"
-#
-#
-# class DefaultCategory(Base):
-#     __tablename__ = "default_category"
-#
-#     user_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"), primary_key=True, unique=True)
-#     category_id: Mapped[int] = mapped_column(ForeignKey("category.category_id"), primary_key=True)
-#
-#     def __repr__(self):
-#         return f"DefaultCategory(user_id={self.user_id!r}, category_id={self.category_id!r})"
-#
-#
-# class DefaultStorage(Base):
-#     __tablename__ = "default_storage"
-#
-#     user_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"), primary_key=True, unique=True)
-#     storage_id: Mapped[int] = mapped_column(ForeignKey("storage.storage_id"), primary_key=True)
-#
-#     def __repr__(self):
-#         return f"DefaultStorage(user_id={self.user_id!r}, storage_id={self.storage_id!r})"
 
 
 class Transaction(Base):

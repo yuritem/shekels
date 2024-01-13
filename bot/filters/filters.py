@@ -1,9 +1,11 @@
 import re
 from typing import get_args
 from aiogram.filters import BaseFilter
+from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 from bot.db.models import AliasableSubtype
+from bot.states import TransactionStates
 
 
 class LongNameFilter(BaseFilter):
@@ -71,3 +73,10 @@ class TransactionFilter(BaseFilter):
 
     async def __call__(self, message: Message) -> bool:
         return re.fullmatch(self.transaction_pattern, message.text) is not None
+
+
+class NotWaitingForTransactionFilter(BaseFilter):
+
+    async def __call__(self, message: Message, state: FSMContext):
+        state_ = await state.get_state()
+        return state_ != TransactionStates.waiting_for_new_transaction

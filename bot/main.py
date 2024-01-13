@@ -1,12 +1,13 @@
 import asyncio
 from aiogram import Bot, Dispatcher
-# from aiogram.fsm.storage.memory import SimpleEventIsolation
+from aiogram.fsm.storage.memory import SimpleEventIsolation
 # from aiogram.fsm.storage.redis import RedisStorage, DefaultKeyBuilder
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 from bot.db.base import Base
 from config import config
 from bot.middlewares.db import DatabaseSessionMiddleware
+from bot.middlewares.user import UserMiddleware
 from handlers import basic, category, alias, storage
 from set_commands import set_commands
 from utils.db import init_database, drop_all_tables
@@ -32,10 +33,11 @@ async def main():
         #     config.REDIS_DSN.unicode_string(),
         #     key_builder=DefaultKeyBuilder(with_bot_id=True)
         # ),
-        # events_isolation=SimpleEventIsolation()
+        events_isolation=SimpleEventIsolation()
     )
 
     dp.update.middleware(DatabaseSessionMiddleware(session_pool=sessionmaker))
+    dp.message.middleware(UserMiddleware())
     dp.include_routers(
         basic.router,
         category.router,

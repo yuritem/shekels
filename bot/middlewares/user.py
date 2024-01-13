@@ -1,30 +1,31 @@
-# todo: middleware that provides User object if they are not banned
-
+import logging
 from typing import Callable, Awaitable, Dict, Any
 from aiogram import BaseMiddleware
 from aiogram.types import Message
-from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
 from bot.repo.repository import Repository
 
+logger = logging.getLogger(__name__)
+
 
 class UserMiddleware(BaseMiddleware):
-    def __init__(self, session_pool: async_sessionmaker[AsyncSession]):
-        super().__init__()
-        self.session_pool = session_pool
-
     async def __call__(
             self,
             handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
             message: Message,
-            data: Dict[str, Any],
+            data: Dict[str, Any]
     ) -> Any:
-        # session: AsyncSession = data.get("session")
         repo: Repository = data.get("repo")
         telegram_id = message.from_user.id
-        user = await repo.get_user(telegram_id=telegram_id)
+        user = await repo.get_user_by_telegram_id(telegram_id=telegram_id)
+        logger.info(f"Got message by {user}")
+        if not user:
+            first_name = message.from_user.first_name
+            user = await repo.add_user(telegram_id=telegram_id, first_name=first_name, banned=False)
+            logger.info(f"Added {user} into database.")
         if not user.banned:
             data.update({"user": user})
             return await handler(message, data)
         else:
-            pass  # todo: logging
+            pass  # todo: log: banned user tried to access db
+            # todo: ban filter on update middleware?

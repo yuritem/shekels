@@ -108,9 +108,14 @@ async def alias_name(message: Message, state: FSMContext, repo: Repository, user
     Command("delete_alias"),
     TransactionStates.waiting_for_new_transaction
 )
-async def cmd_delete_alias(message: Message, state: FSMContext):
+async def cmd_delete_alias(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles /delete_alias command"""
-    await message.answer("Provide alias number to delete.")
+    aliases = await repo.get_aliases_with_full_names_for_user(user.user_id)
+    aliases_str = '\n'.join([
+        f"{a['alias_number']}. {a['alias_name']} ({a['name']})"
+        for a in aliases
+    ])
+    await message.answer(f"Provide alias number to delete:\n\n{aliases_str}")
     await state.set_state(AliasStates.waiting_for_alias_number_to_delete)
 
 
@@ -123,6 +128,7 @@ async def alias_number_to_delete(message: Message, state: FSMContext, repo: Repo
     alias_number = int(message.text)
     max_alias_number = await repo.get_max_alias_number_for_user(user.user_id)
     if alias_number <= max_alias_number:
+        await repo.delete_alias(user.user_id, alias_number)
         await message.answer("Alias deleted.")
         await state.set_state(TransactionStates.waiting_for_new_transaction)
     else:

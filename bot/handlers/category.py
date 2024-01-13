@@ -127,8 +127,8 @@ async def category_number_to_delete(message: Message, state: FSMContext, repo: R
     category_number = int(message.text)
     max_category_number = await repo.get_max_category_number_for_user(user.user_id)
     if category_number <= max_category_number:
-        category = await repo.delete_category(user.user_id, category_number)
-        await message.answer(f"Category '{category.name}' deleted.")
+        await repo.delete_category(user.user_id, category_number)
+        await message.answer(f"Category deleted.")
         await state.set_state(TransactionStates.waiting_for_new_transaction)
     else:
         pass  # Filter behavior

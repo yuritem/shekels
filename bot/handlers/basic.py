@@ -6,10 +6,10 @@ from aiogram.filters import CommandStart, Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from bot.db.models import User
-from bot.repo.repository import Repository
+# from bot.db.models import User
+# from bot.repo.repository import Repository
 from bot.states import TransactionStates
-from bot.filters.filters import TransactionFilter, YesNoFilter
+from bot.filters.filters import TransactionFilter, YesNoFilter, NotWaitingForTransactionFilter
 
 router: Router = Router()
 logger = logging.getLogger(__name__)
@@ -19,13 +19,9 @@ logger = logging.getLogger(__name__)
     CommandStart(),
     StateFilter(None)
 )
-async def cmd_start(message: Message, state: FSMContext, repo: Repository):
+async def cmd_start(message: Message, state: FSMContext):
     """Handles /start command"""
-    user_id = message.from_user.id
-    first_name = message.from_user.first_name
-    user = await repo.add_user(telegram_id=user_id, first_name=first_name, banned=False)
-    logger.info(f"Added {user} into database.")
-    await message.answer("Start message.")
+    await message.answer("Welcome!")
     await state.set_state(TransactionStates.waiting_for_new_transaction)
 
 
@@ -62,7 +58,10 @@ async def transaction(message: Message):
     await message.answer("Operation processed.")
 
 
-@router.message(Command("help"))
+@router.message(
+    Command("help"),
+    TransactionStates.waiting_for_new_transaction
+)
 async def cmd_help(message: Message):
     """Handles /help command"""
     await message.answer("Category & Storage names format (under 40 characters):\n"
@@ -74,7 +73,7 @@ async def cmd_help(message: Message):
 
 @router.message(
     Command("cancel"),
-    ~TransactionStates.waiting_for_new_transaction
+    NotWaitingForTransactionFilter()
 )
 async def cmd_cancel(message: Message, state: FSMContext):
     """Handles /cancel command"""

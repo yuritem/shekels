@@ -39,7 +39,7 @@ async def init_database(metadata: MetaData, engine: AsyncEngine, session_pool: a
             logger.info("Inserting `currency` data...")
             for _, currency_values in enumerate(currency_data):
                 res = await session.execute(insert(Aliasable).values({"aliasable_subtype": "currency"}))
-                id_inserted = res.inserted_primary_key[0]  # returned_defaults[0]
+                id_inserted = res.inserted_primary_key[0]
                 await session.execute(insert(Currency).values({"aliasable_id": id_inserted} | currency_values))
             logger.info("Populated `currency` with data.")
     else:
