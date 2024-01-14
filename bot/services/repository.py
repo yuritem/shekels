@@ -11,7 +11,9 @@ from bot.db.models import (
     Storage,
     StorageCredit,
     StorageCurrency,
-    Alias, Currency, UserDefault
+    Alias,
+    Currency,
+    UserDefault
 )
 
 
@@ -109,12 +111,14 @@ class Repository:
         )
         return await self._session.merge(storage_currency)
 
-    async def _upsert_user_default(self, user_id: int, category_id: Optional[int] = None, storage_id: Optional[int] = None, currency_id: Optional[int] = None) -> UserDefault:
-        r = await self._session.execute(
-            select(UserDefault)
-            .where(UserDefault.user_id == user_id)
-        )
-        user_default = r.scalar()
+    async def _upsert_user_default(
+            self,
+            user_id: int,
+            category_id: Optional[int] = None,
+            storage_id: Optional[int] = None,
+            currency_id: Optional[int] = None
+    ) -> UserDefault:
+        user_default = await self.get_user_default(user_id)
 
         if user_default is None:
             user_default = UserDefault(
@@ -206,7 +210,6 @@ class Repository:
         await self._refresh_model_numbers_for_user(user_id, model=Category)
 
     async def delete_category(self, user_id: int, number: int) -> None:
-        # todo: undeletable "uncategorized"
         # todo: what to do with Transaction table?
         category = await self.get_category_by_number_for_user(user_id, number)
         await self._delete_aliasable(category.aliasable_id)
@@ -216,8 +219,16 @@ class Repository:
 
     async def set_default_category(self, user_id: int, number: int) -> Category:
         category = await self.get_category_by_number_for_user(user_id, number)
-        await self._upsert_user_default(user_id, category.category_id)
+        await self._upsert_user_default(user_id, category_id=category.category_id)
         return category
+
+    async def get_default_category_for_user(self, user_id: int) -> Optional[Category]:
+        user_default = await self.get_user_default(user_id)
+        if user_default.category_id:
+            category = self._session.get(Category, user_default.category_id)
+            return await category
+        else:
+            return None
 
     async def add_storage(
             self,
@@ -286,7 +297,6 @@ class Repository:
         await self._refresh_model_numbers_for_user(user_id, model=Storage)
 
     async def delete_storage(self, user_id: int, number: int) -> None:
-        # todo: undeletable "wallet"
         # todo: what to do with Transaction table?
         storage = await self.get_storage_by_number_for_user(user_id, number)
         await self._delete_aliasable(storage.aliasable_id)
@@ -296,8 +306,16 @@ class Repository:
 
     async def set_default_storage(self, user_id: int, number: int) -> Storage:
         storage = await self.get_storage_by_number_for_user(user_id, number)
-        await self._upsert_user_default(user_id, storage.storage_id)
+        await self._upsert_user_default(user_id, storage_id=storage.storage_id)
         return storage
+
+    async def get_default_storage_for_user(self, user_id: int) -> Optional[Storage]:
+        user_default = await self.get_user_default(user_id)
+        if user_default.storage_id:
+            storage = self._session.get(Storage, user_default.storage_id)
+            return await storage
+        else:
+            return None
 
     async def add_alias(
             self,
@@ -341,11 +359,17 @@ class Repository:
         return await self._get_model_by_number_for_user(user_id, number, model=Alias)
 
     async def get_aliases_with_full_names_for_user(self, user_id: int) -> List[Dict]:
-        """Returns a list of aliases in the format of {"number": x, "alias_name": y, "name": z} for user_id"""
-        # todo: join with Aliasable first to get 'subtype'?
-        # todo: maybe split output by subtype? easier to query, nicer to read
+        """
+        Returns a list of aliases for user with user_id in the following format:
+        {"alias_number": w, "alias_name": x, "aliasable_subtype": y, "name": z}
+        """
 
-        alias_user = select(Alias.aliasable_id, Alias.number.label("alias_number"), Alias.name.label("alias_name")).where(Alias.user_id == user_id).subquery()
+        alias_user = (
+            select(Alias.aliasable_id, Alias.name.label("alias_name"), Aliasable.aliasable_subtype)
+            .where(Alias.user_id == user_id)
+            .join(Aliasable, Alias.aliasable_id == Aliasable.aliasable_id)
+            .subquery()
+        )
 
         category_user = select(Category.aliasable_id, Category.name.label("name")).where(Category.user_id == user_id)
         storage_user = select(Storage.aliasable_id, Storage.name.label("name")).where(Storage.user_id == user_id)
@@ -354,7 +378,7 @@ class Repository:
         u = union(category_user, storage_user, currency).subquery()
 
         r = await self._session.execute(
-            select(alias_user.c.alias_number, alias_user.c.alias_name, u.c.name)
+            select(alias_user.c.alias_number, alias_user.c.alias_name, alias_user.c.aliasable_subtype, u.c.name)
             .join(u, alias_user.c.aliasable_id == u.c.aliasable_id)
             .order_by(alias_user.c.alias_number)
         )
@@ -373,7 +397,7 @@ class Repository:
         await self._session.flush()
         await self.refresh_alias_numbers_for_user(user_id)
 
-    async def get_user_default(self, user_id: int) -> UserDefault:
+    async def get_user_default(self, user_id: int) -> Optional[UserDefault]:
         r = await self._session.execute(
             select(UserDefault)
             .where(UserDefault.user_id == user_id)
@@ -395,4 +419,9 @@ class Repository:
             .where(Currency.alpha_code == alpha_code)
         )
         currency = r.scalar()
+        return currency
+
+    async def set_default_currency(self, user_id: int, alpha_code: str) -> Currency:
+        currency = await self.get_currency_by_alpha_code(alpha_code)
+        await self._upsert_user_default(user_id, currency_id=currency.currency_id)
         return currency

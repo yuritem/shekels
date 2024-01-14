@@ -7,7 +7,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 # from bot.db.models import User
-# from bot.repo.repository import Repository
+# from bot.services.repository import Repository
 from bot.states import TransactionStates
 from bot.filters.filters import TransactionFilter, YesNoFilter, NotWaitingForTransactionFilter
 
@@ -35,27 +35,12 @@ async def transaction(message: Message):
     :param message: Telegram message
     """
     # todo: db
-    """provided (user_id: int, category: str, storage: str, currency: str), we don't know if user used any aliases in the names, we need to get their IDs from database or to denote an error if we fail to do so
-    
-    
-    
-    categories_unaliased = (
-        SELECT (category_id, category_name)
-          FROM category
-         WHERE category.user_id=`user_id`
-    )
-    categories_aliased = (
-        SELECT (category_id, category_name, aliasable_id)
-          FROM category
-         WHERE category.user_id=`user_id`
-           AND category.aliasable_id IS NOT NULL
-    
-    )
-    
-    category_id = ...
-    
     """
-    await message.answer("Operation processed.")
+    provided (user_id: int, category: str, storage: str, currency: str),
+    we don't know if user used any aliases in the names, we need to get their IDs from database
+    or throw an error if we fail
+    """
+    await message.answer("Transaction processed.")
 
 
 @router.message(

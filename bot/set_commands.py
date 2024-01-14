@@ -18,7 +18,9 @@ COMMANDS = {
     "delete_alias": "Delete existing alias",
     "set_default_category": "Set default category",
     "set_default_storage": "Set default storage",
-    # "set_default_currency": "Set default currency"  # todo
+    "set_default_currency": "Set default currency",
+    # "list_categories": "Get a list of your categories",  # todo
+    # "list_storages": "Get a list of your categories",  # todo
 }
 
 

@@ -5,8 +5,9 @@ from aiogram.types import Message
 
 from bot.db.models import User
 from bot.filters.filters import LongNameFilter, YesNoFilter, NumberFilter
-from bot.repo.repository import Repository
+from bot.services.repository import Repository
 from bot.states import CategoryStates, TransactionStates
+from bot.utils.list_models import get_category_list
 
 router = Router()
 
@@ -52,12 +53,8 @@ async def category_factor_in_to_add(message: Message, state: FSMContext, repo: R
 )
 async def cmd_edit_category(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles /edit_category command"""
-    categories = await repo.get_categories_for_user(user.user_id)
-    categories_str = '\n'.join([
-        f"{c.number}. {c.name}"
-        for c in categories
-    ])
-    await message.answer(f"Provide category number to edit:\n\n{categories_str}")
+    categories = get_category_list(user.user_id, repo)
+    await message.answer(f"Provide category number to edit:\n\n{categories}")
     await state.set_state(CategoryStates.waiting_for_category_number_to_edit)
 
 
@@ -71,7 +68,7 @@ async def category_number_to_edit(message: Message, state: FSMContext, repo: Rep
     max_category_number = await repo.get_max_category_number_for_user(user.user_id)
     if category_number <= max_category_number:
         await state.update_data({"category_number": category_number})
-        await message.answer("Provide new name for the category:")
+        await message.answer("New name for the category:")
         await state.set_state(CategoryStates.waiting_for_edited_category_name)
     else:
         pass  # Filter behavior
@@ -109,12 +106,8 @@ async def category_factor_in_to_edit(message: Message, state: FSMContext, repo: 
 )
 async def cmd_delete_category(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles /delete_category command"""
-    categories = await repo.get_categories_for_user(user.user_id)
-    categories_str = '\n'.join([
-        f"{c.number}. {c.name}"
-        for c in categories
-    ])
-    await message.answer(f"Provide category number to delete:\n\n{categories_str}")
+    categories = get_category_list(user.user_id, repo)
+    await message.answer(f"Provide category number to delete:\n\n{categories}")
     await state.set_state(CategoryStates.waiting_for_category_number_to_delete)
 
 
@@ -140,12 +133,8 @@ async def category_number_to_delete(message: Message, state: FSMContext, repo: R
 )
 async def cmd_set_default_category(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles /set_default_category command"""
-    categories = await repo.get_categories_for_user(user.user_id)
-    categories_str = '\n'.join([
-        f"{c.number}. {c.name}"
-        for c in categories
-    ])
-    await message.answer(f"Provide category number to set as default:\n\n{categories_str}")
+    categories = get_category_list(user.user_id, repo)
+    await message.answer(f"Provide category number to set as default:\n\n{categories}")
     await state.set_state(CategoryStates.waiting_for_category_number_to_set_default)
 
 
@@ -159,7 +148,7 @@ async def category_number_to_set_default(message: Message, state: FSMContext, re
     max_category_number = await repo.get_max_category_number_for_user(user.user_id)
     if category_number <= max_category_number:
         category = await repo.set_default_category(user.user_id, category_number)
-        await message.answer(f"Category {category.name} is now default!")
+        await message.answer(f"Category '{category.name}' is now default!")
         await state.set_state(TransactionStates.waiting_for_new_transaction)
     else:
         pass  # Filter behavior

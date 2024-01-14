@@ -41,6 +41,10 @@ class AliasStates(StatesGroup):
     waiting_for_alias_number_to_delete = State()
 
 
+class CurrencyStates(StatesGroup):
+    waiting_for_currency_alphacode = State()
+
+
 class TransactionStates(StatesGroup):
     # add
     waiting_for_new_transaction = State()  # main state

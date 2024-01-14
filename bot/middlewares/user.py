@@ -3,7 +3,7 @@ from typing import Callable, Awaitable, Dict, Any
 from aiogram import BaseMiddleware
 from aiogram.types import Message
 
-from bot.repo.repository import Repository
+from bot.services.repository import Repository
 
 logger = logging.getLogger(__name__)
 

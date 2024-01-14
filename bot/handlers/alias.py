@@ -5,8 +5,9 @@ from aiogram.types import Message
 
 from bot.db.models import User
 from bot.filters.filters import AliasableSubtypeFilter, NumberFilter, ShortNameFilter
-from bot.repo.repository import Repository
+from bot.services.repository import Repository
 from bot.states import AliasStates, TransactionStates
+from bot.utils.list_models import get_alias_list, get_storage_list, get_category_list
 
 router = Router()
 
@@ -31,21 +32,16 @@ async def aliasable_subtype(message: Message, state: FSMContext, repo: Repositor
     await state.update_data({"aliasable_subtype": subtype})
     if subtype in ['storage', 'category']:
         if subtype == 'storage':
-            aliasables = await repo.get_storages_for_user(user.user_id)
+            aliasables = await get_storage_list(user.user_id, repo)
         else:
-            aliasables = await repo.get_categories_for_user(user.user_id)
-        aliasables_str = '\n'.join([
-            f"{a.number}. {a.name}"
-            for a in aliasables
-        ])
-        await message.answer(f"Provide {subtype} number:\n\n{aliasables_str}")
+            aliasables = await get_category_list(user.user_id, repo)
+        await message.answer(f"Provide {subtype} number:\n\n{aliasables}")
         await state.set_state(AliasStates.waiting_for_aliasable_number)
     elif subtype == 'currency':
-        await message.answer("Provide 3-letter currency alphacode.")
+        await message.answer("Currency 3-letter alphacode:")
         await state.set_state(AliasStates.waiting_for_currency_alphacode)
     else:
-        # todo: log
-        await message.answer("Unknown type. Try again.")
+        await message.answer("Unknown type. Try again.")  # todo: log
 
 
 @router.message(
@@ -63,7 +59,7 @@ async def aliasable_number_to_add(message: Message, state: FSMContext, repo: Rep
         max_aliasable_number = await repo.get_max_category_number_for_user(user.user_id)
     if aliasable_number <= max_aliasable_number:
         await state.update_data({"aliasable_number": aliasable_number})
-        await message.answer("Provide your alias.")
+        await message.answer("Your alias:")
         await state.set_state(AliasStates.waiting_for_alias_name)
     else:
         pass  # Filter behavior
@@ -76,7 +72,7 @@ async def currency_alphacode(message: Message, state: FSMContext, repo: Reposito
     currency = await repo.get_currency_by_alpha_code(alpha_code=alpha_code)
     if currency:
         await state.update_data({"currency_id": currency.currency_id})
-        await message.answer("Provide your alias.")
+        await message.answer("Your alias:")
         await state.set_state(AliasStates.waiting_for_alias_name)
     else:
         pass  # Filter behavior
@@ -110,12 +106,8 @@ async def alias_name(message: Message, state: FSMContext, repo: Repository, user
 )
 async def cmd_delete_alias(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles /delete_alias command"""
-    aliases = await repo.get_aliases_with_full_names_for_user(user.user_id)
-    aliases_str = '\n'.join([
-        f"{a['alias_number']}. {a['alias_name']} ({a['name']})"
-        for a in aliases
-    ])
-    await message.answer(f"Provide alias number to delete:\n\n{aliases_str}")
+    aliases = get_alias_list(user.user_id, repo)
+    await message.answer(f"Provide alias number to delete:\n\n{aliases}")
     await state.set_state(AliasStates.waiting_for_alias_number_to_delete)
 
 

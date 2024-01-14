@@ -52,7 +52,7 @@ class Aliasable(Base):
     )
 
     def __repr__(self) -> str:
-        return f"Aliasable(aliasable_id={self.aliasable_id!r})"
+        return f"Aliasable(aliasable_id={self.aliasable_id!r}, aliasable_subtype={self.aliasable_subtype!r})"
 
 
 class Alias(Base):
