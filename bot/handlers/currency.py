@@ -17,7 +17,7 @@ router = Router()
 async def cmd_set_default_currency(message: Message, state: FSMContext):
     """Handles /set_default_currency command"""
     await message.answer("Currency 3-letter alphacode:")
-    await state.set_state(TransactionStates.waiting_for_new_transaction)
+    await state.set_state(CurrencyStates.waiting_for_currency_alphacode)
 
 
 @router.message(CurrencyStates.waiting_for_currency_alphacode)
@@ -27,7 +27,7 @@ async def currency_alphacode(message: Message, state: FSMContext, repo: Reposito
     currency = await repo.get_currency_by_alpha_code(alpha_code)
     if currency:
         await repo.set_default_currency(user.user_id, alpha_code)
-        # add default currency here
+        await message.answer(f"Currency '{currency.name}' ({currency.alpha_code}! is now default!")
         await state.set_state(TransactionStates.waiting_for_new_transaction)
     else:
         pass  # Filter behavior

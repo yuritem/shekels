@@ -53,7 +53,7 @@ async def category_factor_in_to_add(message: Message, state: FSMContext, repo: R
 )
 async def cmd_edit_category(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles /edit_category command"""
-    categories = get_category_list(user.user_id, repo)
+    categories = await get_category_list(user.user_id, repo)
     await message.answer(f"Provide category number to edit:\n\n{categories}")
     await state.set_state(CategoryStates.waiting_for_category_number_to_edit)
 
@@ -106,7 +106,7 @@ async def category_factor_in_to_edit(message: Message, state: FSMContext, repo: 
 )
 async def cmd_delete_category(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles /delete_category command"""
-    categories = get_category_list(user.user_id, repo)
+    categories = await get_category_list(user.user_id, repo)
     await message.answer(f"Provide category number to delete:\n\n{categories}")
     await state.set_state(CategoryStates.waiting_for_category_number_to_delete)
 
@@ -133,7 +133,7 @@ async def category_number_to_delete(message: Message, state: FSMContext, repo: R
 )
 async def cmd_set_default_category(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles /set_default_category command"""
-    categories = get_category_list(user.user_id, repo)
+    categories = await get_category_list(user.user_id, repo)
     await message.answer(f"Provide category number to set as default:\n\n{categories}")
     await state.set_state(CategoryStates.waiting_for_category_number_to_set_default)
 

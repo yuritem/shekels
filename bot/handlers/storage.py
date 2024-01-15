@@ -119,7 +119,7 @@ async def storage_currency_alpha_code(message: Message, state: FSMContext, repo:
 )
 async def cmd_edit_storage(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles /edit_storage command"""
-    storages = get_storage_list(user.user_id, repo)
+    storages = await get_storage_list(user.user_id, repo)
     await message.answer(f"Provide storage number to edit:\n\n{storages}")
     await state.set_state(StorageStates.waiting_for_storage_number_to_edit)
 
@@ -160,7 +160,7 @@ async def storage_name_to_edit(message: Message, state: FSMContext, repo: Reposi
 )
 async def cmd_delete_storage(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles /delete_storage command"""
-    storages = get_storage_list(user.user_id, repo)
+    storages = await get_storage_list(user.user_id, repo)
     await message.answer(f"Provide storage number to delete:\n\n{storages}")
     await state.set_state(StorageStates.waiting_for_storage_number_to_delete)
     ...
@@ -188,7 +188,7 @@ async def storage_number_to_delete(message: Message, state: FSMContext, repo: Re
 )
 async def cmd_set_default_storage(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles /set_default_storage command"""
-    storages = get_storage_list(user.user_id, repo)
+    storages = await get_storage_list(user.user_id, repo)
     await message.answer(f"Provide storage number to set as default:\n\n{storages}")
     await state.set_state(StorageStates.waiting_for_storage_number_to_set_default)
 
