@@ -22,10 +22,7 @@ async def get_storage_list(user_id: int, repo: Repository) -> str:
         s = f"{storage.number}. {storage.name}{credit}{multicurrency}{default}"
         storage_strings.append(s)
 
-    storages_str = '\n'.join([
-        f"{s.number}. {s.name}" + " [default]" * (s.storage_id == storage_default.storage_id)
-        for s in storages
-    ])
+    storages_str = '\n'.join(storage_strings)
     return storages_str
 
 

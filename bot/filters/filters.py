@@ -10,7 +10,7 @@ from bot.states import TransactionStates
 
 class LongNameFilter(BaseFilter):
     r"""Matches one or several words (consisting of symbols matching [a-zA-Z0-9_\-.]) separated by whitespace"""
-    phrase_pattern = re.compile(r"^\w[\w\-.]+(?:\s+\w[\w\-.]+)*")
+    phrase_pattern = re.compile(r"^[\w\-.]+(?:\s+[\w\-.]+)*$")
 
     async def __call__(self, message: Message) -> bool:
         return (re.fullmatch(self.phrase_pattern, message.text) is not None) and (len(message.text) <= 40)
@@ -65,11 +65,13 @@ class AliasableSubtypeFilter:
 
 
 class TransactionFilter(BaseFilter):
-    transaction_pattern = re.compile(r"([+-]?\d+(?:\.\d*)?)\s+(\w+)(?:\s+(\w+))?(?:\s+(\w+))?")
-    # todo: Adjust pattern to support installment payments
-
-    def __init__(self):
-        pass
+    transaction_pattern = re.compile(
+        r"([+-]?\d+(?:\.\d*)?)"  # amount (required)
+        r"(?:/(\d+))?"  # months for installment payments (optional)
+        r"(?:\s+(\w+))?"  # currency (optional)
+        r"(?:\s+([\w\-.]+))?"  # storage 1 (optional)
+        r"(?:\s+([\w\-.]+))?"  # storage 2 (optional) / category (optional)
+    )
 
     async def __call__(self, message: Message) -> bool:
         return re.fullmatch(self.transaction_pattern, message.text) is not None

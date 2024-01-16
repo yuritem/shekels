@@ -13,13 +13,13 @@ from bot.db.models import (
     StorageCurrency,
     Alias,
     Currency,
-    UserDefault
+    UserDefault, Transaction
 )
 
 
 class Repository:
     def __init__(self, session: AsyncSession):
-        self._session = session
+        self.session = session
 
     async def _get_max_model_target_for_user(self, user_id: int, colname_target: str, model: Type[Union[Category, Alias, Storage]]):
         column_target = getattr(model, colname_target)
@@ -29,7 +29,7 @@ class Repository:
             select(func.max(column_target))
             .where(column_user_id == user_id)
         )
-        r = await self._session.execute(stmt_get_last_record)
+        r = await self.session.execute(stmt_get_last_record)
 
         max_target = r.scalar()
 
@@ -49,7 +49,7 @@ class Repository:
         user_id_column = getattr(model, "user_id")
         number_column = getattr(model, "number")
 
-        r = await self._session.execute(
+        r = await self.session.execute(
             select(model)
             .where(
                 user_id_column == user_id,
@@ -64,7 +64,7 @@ class Repository:
             raise ValueError(f"Model {model.__class__} does not define a column named 'user_id'")
         if not hasattr(model, "number"):
             raise ValueError(f"Model {model.__class__} does not define a column named 'number'")
-        r = await self._session.execute(
+        r = await self.session.execute(
             select(model)
             .where(model.user_id == user_id)
             .order_by(model.number)
@@ -72,7 +72,7 @@ class Repository:
         return r.scalars().all()
 
     async def _get_aliasable_id_by_currency_id(self, currency_id: int) -> int:
-        r = await self._session.execute(
+        r = await self.session.execute(
             select(Currency.aliasable_id)
             .where(Currency.currency_id == currency_id)
         )
@@ -85,14 +85,14 @@ class Repository:
         model_instances = await self._get_model_for_user(user_id, model=model)
         for n, model_instance in enumerate(model_instances):
             model_instance.number = n + 1
-            await self._session.merge(model_instance)
+            await self.session.merge(model_instance)
 
     async def _add_aliasable(self, aliasable_subtype: AliasableSubtype) -> Aliasable:
         aliasable = Aliasable(aliasable_subtype=aliasable_subtype)
-        return await self._session.merge(aliasable)
+        return await self.session.merge(aliasable)
 
     async def _delete_aliasable(self, aliasable_id) -> None:
-        await self._session.execute(
+        await self.session.execute(
             delete(Aliasable)
             .where(Aliasable.aliasable_id == aliasable_id)
         )
@@ -102,14 +102,14 @@ class Repository:
             storage_id=storage_id,
             billing_day=billing_day
         )
-        return await self._session.merge(storage_credit)
+        return await self.session.merge(storage_credit)
 
     async def _add_storage_currency(self, storage_id: int, currency_id: int) -> StorageCurrency:
         storage_currency = StorageCurrency(
             storage_id=storage_id,
             currency_id=currency_id
         )
-        return await self._session.merge(storage_currency)
+        return await self.session.merge(storage_currency)
 
     async def _upsert_user_default(
             self,
@@ -135,37 +135,18 @@ class Repository:
             if currency_id is not None:
                 user_default.currency_id = currency_id
 
-        return await self._session.merge(user_default)
+        return await self.session.merge(user_default)
 
     async def add_user(self, telegram_id: int, first_name: str, banned: bool) -> User:
-        user = await self._session.merge(
-            User(
-                telegram_id=telegram_id,
-                first_name=first_name,
-                banned=banned
-            )
+        user = User(
+            telegram_id=telegram_id,
+            first_name=first_name,
+            banned=banned
         )
-        await self._session.flush()
-
-        category = await self.add_category(
-            user_id=user.user_id,
-            name="Uncategorized",
-            factor_in=True
-        )
-        await self.set_default_category(user.user_id, number=category.number)
-
-        storage = await self.add_storage(
-            user_id=user.user_id,
-            name="Wallet",
-            is_credit=False,
-            multicurrency=True
-        )
-        await self.set_default_storage(user.user_id, number=storage.number)
-
-        return user
+        return await self.session.merge(user)
 
     async def get_user_by_telegram_id(self, telegram_id: int) -> Optional[User]:
-        r = await self._session.execute(
+        r = await self.session.execute(
             select(User)
             .where(User.telegram_id == telegram_id)
         )
@@ -185,7 +166,7 @@ class Repository:
             factor_in=factor_in
         )
 
-        return await self._session.merge(category)
+        return await self.session.merge(category)
 
     async def get_categories_for_user(self, user_id: int) -> Sequence[Category]:
         return await self._get_model_for_user(user_id, model=Category)
@@ -197,7 +178,7 @@ class Repository:
         return await self._get_max_model_number_for_user(user_id, model=Category)
 
     async def update_category(self, user_id: int, number: int, name: str, factor_in: bool) -> None:
-        await self._session.execute(
+        await self.session.execute(
             update(Category)
             .where(
                 Category.user_id == user_id,
@@ -213,8 +194,8 @@ class Repository:
         # todo: what to do with Transaction table?
         category = await self.get_category_by_number_for_user(user_id, number)
         await self._delete_aliasable(category.aliasable_id)
-        await self._session.delete(category)
-        await self._session.flush()
+        await self.session.delete(category)
+        await self.session.flush()
         await self.refresh_category_numbers_for_user(user_id)
 
     async def set_default_category(self, user_id: int, number: int) -> Category:
@@ -225,7 +206,7 @@ class Repository:
     async def get_default_category_for_user(self, user_id: int) -> Optional[Category]:
         user_default = await self.get_user_default(user_id)
         if user_default.category_id:
-            category = self._session.get(Category, user_default.category_id)
+            category = self.session.get(Category, user_default.category_id)
             return await category
         else:
             return None
@@ -258,8 +239,8 @@ class Repository:
             is_credit=is_credit,
             multicurrency=multicurrency
         )
-        storage = await self._session.merge(storage)
-        await self._session.flush()
+        storage = await self.session.merge(storage)
+        await self.session.flush()
 
         if is_credit:
             await self._add_storage_credit(
@@ -284,7 +265,7 @@ class Repository:
         return await self._get_max_model_number_for_user(user_id, model=Storage)
 
     async def upadte_storage(self, user_id: int, number: int, name: str) -> None:
-        await self._session.execute(
+        await self.session.execute(
             update(Storage)
             .where(
                 Storage.user_id == user_id,
@@ -300,8 +281,8 @@ class Repository:
         # todo: what to do with Transaction table?
         storage = await self.get_storage_by_number_for_user(user_id, number)
         await self._delete_aliasable(storage.aliasable_id)
-        await self._session.delete(storage)
-        await self._session.flush()
+        await self.session.delete(storage)
+        await self.session.flush()
         await self.refresh_storage_numbers_for_user(user_id)
 
     async def set_default_storage(self, user_id: int, number: int) -> Storage:
@@ -312,7 +293,7 @@ class Repository:
     async def get_default_storage_for_user(self, user_id: int) -> Optional[Storage]:
         user_default = await self.get_user_default(user_id)
         if user_default.storage_id:
-            storage = self._session.get(Storage, user_default.storage_id)
+            storage = self.session.get(Storage, user_default.storage_id)
             return await storage
         else:
             return None
@@ -350,7 +331,7 @@ class Repository:
             name=name
         )
 
-        return await self._session.merge(alias)
+        return await self.session.merge(alias)
 
     async def get_aliases_for_user(self, user_id: int) -> Sequence[Alias]:
         return await self._get_model_for_user(user_id, model=Alias)
@@ -377,7 +358,7 @@ class Repository:
 
         u = union(category_user, storage_user, currency).subquery()
 
-        r = await self._session.execute(
+        r = await self.session.execute(
             select(alias_user.c.alias_number, alias_user.c.alias_name, alias_user.c.aliasable_subtype, u.c.name)
             .join(u, alias_user.c.aliasable_id == u.c.aliasable_id)
             .order_by(alias_user.c.alias_number)
@@ -393,12 +374,12 @@ class Repository:
 
     async def delete_alias(self, user_id: int, number: int) -> None:
         alias = self.get_alias_by_number_for_user(user_id, number)
-        await self._session.delete(alias)
-        await self._session.flush()
+        await self.session.delete(alias)
+        await self.session.flush()
         await self.refresh_alias_numbers_for_user(user_id)
 
     async def get_user_default(self, user_id: int) -> Optional[UserDefault]:
-        r = await self._session.execute(
+        r = await self.session.execute(
             select(UserDefault)
             .where(UserDefault.user_id == user_id)
         )
@@ -406,7 +387,7 @@ class Repository:
         return user_default
 
     async def get_currencies(self) -> Sequence[Currency]:
-        r = await self._session.execute(
+        r = await self.session.execute(
             select(Currency)
             .order_by(Currency.currency_id)
         )
@@ -414,7 +395,7 @@ class Repository:
         return currencies
 
     async def get_currency_by_alpha_code(self, alpha_code: str) -> Optional[Currency]:
-        r = await self._session.execute(
+        r = await self.session.execute(
             select(Currency)
             .where(Currency.alpha_code == alpha_code)
         )
@@ -425,3 +406,14 @@ class Repository:
         currency = await self.get_currency_by_alpha_code(alpha_code)
         await self._upsert_user_default(user_id, currency_id=currency.currency_id)
         return currency
+
+    async def add_transaction(
+            self,
+            user_id: int,
+            storage_id: int,
+            category_id: int,
+            currency_id: int,
+            amount: float,
+            months: int
+    ) -> Transaction:
+        pass

@@ -8,7 +8,7 @@ from bot.db.base import Base
 from config import config
 from bot.middlewares.db import DatabaseSessionMiddleware
 from bot.middlewares.user import UserMiddleware
-from handlers import basic, category, alias, storage
+from handlers import basic, category, alias, storage, currency
 from set_commands import set_commands
 from utils.db import init_database, drop_all_tables
 from utils.log import setup_logging
@@ -25,7 +25,7 @@ async def main():
         engine,
         expire_on_commit=False
     )
-    await drop_all_tables(engine=engine)  # Todo: remove once app is done testing
+    # await drop_all_tables(engine=engine)  # Todo: remove once app is done testing
     await init_database(metadata=Base.metadata, engine=engine, session_pool=sessionmaker)
 
     dp = Dispatcher(
@@ -42,7 +42,8 @@ async def main():
         basic.router,
         category.router,
         alias.router,
-        storage.router
+        storage.router,
+        currency.router
     )
 
     bot = Bot(token=config.BOT_TOKEN.get_secret_value(), parse_mode='HTML')

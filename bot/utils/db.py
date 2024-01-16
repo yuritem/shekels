@@ -9,8 +9,9 @@ from sqlalchemy.schema import ForeignKeyConstraint, Table, DropConstraint, DropT
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, AsyncEngine
 from sqlalchemy.dialects.postgresql import insert
 
-from bot.db.models import Currency, Aliasable
+from bot.db.models import Currency, Aliasable, User
 from bot.config import CURRENCY_DATA_PATH
+from bot.services.repository import Repository
 
 logger = logging.getLogger(__name__)
 
@@ -67,3 +68,30 @@ async def drop_all_tables(engine: AsyncEngine):
         for table in tables:
             await conn.execute(DropTable(table))
     logger.info("Dropped all tables.")
+
+
+async def add_and_init_user(telegram_id: int, first_name: str, banned: bool, repo: Repository) -> User:
+    user = await repo.add_user(telegram_id, first_name, banned)
+    await repo.session.flush()
+
+    await repo.add_category(
+        user_id=user.user_id,
+        name="Transfers between own accounts",
+        factor_in=False
+    )
+    category = await repo.add_category(
+        user_id=user.user_id,
+        name="Uncategorized",
+        factor_in=True
+    )
+    await repo.set_default_category(user.user_id, number=category.number)
+
+    storage = await repo.add_storage(
+        user_id=user.user_id,
+        name="Wallet",
+        is_credit=False,
+        multicurrency=True
+    )
+    await repo.set_default_storage(user.user_id, number=storage.number)
+
+    return user

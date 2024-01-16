@@ -4,6 +4,7 @@ from aiogram import BaseMiddleware
 from aiogram.types import Message
 
 from bot.services.repository import Repository
+from bot.utils.db import add_and_init_user
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ class UserMiddleware(BaseMiddleware):
         logger.info(f"Got message by {user}")
         if not user:
             first_name = message.from_user.first_name
-            user = await repo.add_user(telegram_id=telegram_id, first_name=first_name, banned=False)
+            user = await add_and_init_user(telegram_id=telegram_id, first_name=first_name, banned=False, repo=repo)
             logger.info(f"Added {user} into database.")
         if not user.banned:
             data.update({"user": user})

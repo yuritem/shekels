@@ -13,6 +13,16 @@ router = Router()
 
 
 @router.message(
+    Command("list_categories"),
+    TransactionStates.waiting_for_new_transaction
+)
+async def cmd_list_categories(message: Message, repo: Repository, user: User):
+    """Handles /list_categories command"""
+    categories = await get_category_list(user.user_id, repo)
+    await message.answer(f"List of categories:\n\n{categories}")
+
+
+@router.message(
     Command("add_category"),
     TransactionStates.waiting_for_new_transaction
 )

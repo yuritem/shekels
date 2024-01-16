@@ -13,6 +13,16 @@ router = Router()
 
 
 @router.message(
+    Command("list_storages"),
+    TransactionStates.waiting_for_new_transaction
+)
+async def cmd_list_storages(message: Message, repo: Repository, user: User):
+    """Handles /list_storages command"""
+    storages = await get_storage_list(user.user_id, repo)
+    await message.answer(f"List of storages:\n\n{storages}")
+
+
+@router.message(
     Command("add_storage"),
     TransactionStates.waiting_for_new_transaction
 )
