@@ -1,7 +1,7 @@
 # ₪ Shekels
 
 [Shekels](https://t.me/ilshekelbot) is a fully asynchronous telegram bot for personal finance made with the [aiogram](https://github.com/aiogram/aiogram) framework.  
-Shekels is designed to be really easy and fast to use once configured.
+Shekels is designed to be easy and fast to use &mdash; even more so once you _configure it_.
 
 ⚠️ The project is currently under development. Bot is down.
 
@@ -13,6 +13,16 @@ Shekels is designed to be really easy and fast to use once configured.
 - Set up default categories and storages for even more speed
 - View current balance, stats, and clean monthly reports
 - 150+ currencies avaliable
+
+<!--
+## Overview
+
+### Storages
+
+### Categories
+
+### Aliases
+-->
 
 ## Technologies
 <!--
@@ -28,6 +38,12 @@ Shekels is designed to be really easy and fast to use once configured.
 - [Poetry](https://python-poetry.org/)
 - [Postgresql](https://www.postgresql.org/)
 - [Redis](https://redis.io/)
+
+## Data model
+
+![Shekels database model](media/shekels_db_model.svg "Shekels database model")
+
+(made with [dbdiagram.io](https://dbdiagram.io/))
 
 ## Usage
 
