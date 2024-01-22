@@ -32,12 +32,12 @@ Shekels is designed to be easy and fast to use &mdash; even more so once you _co
 ![Asyncio](https://img.shields.io/badge/asyncio-%2300BAFF.svg?&style=for-the-badge&logo=python&logoColor=white)
 -->
 
-- [Aiogram 3.x](https://github.com/aiogram/aiogram)
-- [Sqlalchemy 2.x](https://www.sqlalchemy.org/)
-- [Pydantic 2.x](https://github.com/pydantic/pydantic)
-- [Poetry](https://python-poetry.org/)
-- [Postgresql](https://www.postgresql.org/)
-- [Redis](https://redis.io/)
+- [Aiogram 3.x](https://github.com/aiogram/aiogram) &mdash; telegram bot interface;
+- [Postgresql](https://www.postgresql.org/) &mdash; database;
+- [Sqlalchemy 2.x](https://www.sqlalchemy.org/) &mdash; async ORM for Postgres;
+- [Pydantic 2.x](https://github.com/pydantic/pydantic) &mdash; data validation via models;
+- [Poetry](https://python-poetry.org/) &mdash; dependency management;
+- [Redis](https://redis.io/) &mdash; persistent storage for temporary data.
 
 ## Data model
 
