@@ -57,7 +57,7 @@ class DayOfTheMonthFilter(NumberFilter):
         return False
 
 
-class AliasableSubtypeFilter:
+class AliasableSubtypeFilter(BaseFilter):
     allowed = get_args(AliasableSubtype)
 
     async def __call__(self, message: Message) -> bool:
@@ -68,7 +68,7 @@ class TransactionFilter(BaseFilter):
     transaction_pattern = re.compile(
         r"([+-]?\d+(?:\.\d*)?)"  # amount (required)
         r"(?:/(\d+))?"  # months for installment payments (optional)
-        r"(?:\s+(\w+))?"  # currency (optional)
+        r"(?:\s+([\w\-.]+))?"  # currency (optional)
         r"(?:\s+([\w\-.]+))?"  # storage 1 (optional)
         r"(?:\s+([\w\-.]+))?"  # storage 2 (optional) / category (optional)
     )
