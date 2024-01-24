@@ -26,15 +26,33 @@ async def _aliasable_model(
 
 
 async def _currency(text: str, currencies: Sequence[Currency], currency_aliases: Sequence[Alias], repo: Repository) -> Optional[Currency]:
-    return await _aliasable_model(text, model=Currency, models=currencies, model_aliases=currency_aliases, repo=repo)
+    return await _aliasable_model(
+        text,
+        model=Currency,
+        models=currencies,
+        model_aliases=currency_aliases,
+        repo=repo
+    )
 
 
 async def _storage(text: str, storages: Sequence[Storage], storage_aliases: Sequence[Alias], repo: Repository) -> Optional[Storage]:
-    return await _aliasable_model(text, model=Storage, models=storages, model_aliases=storage_aliases, repo=repo)
+    return await _aliasable_model(
+        text,
+        model=Storage,
+        models=storages,
+        model_aliases=storage_aliases,
+        repo=repo
+    )
 
 
 async def _category(text: str, categories: Sequence[Category], category_aliases: Sequence[Alias], repo: Repository) -> Optional[Category]:
-    return await _aliasable_model(text, model=Category, models=categories, model_aliases=category_aliases, repo=repo)
+    return await _aliasable_model(
+        text,
+        model=Category,
+        models=categories,
+        model_aliases=category_aliases,
+        repo=repo
+    )
 
 
 async def parse_transaction_(
