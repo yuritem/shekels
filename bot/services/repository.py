@@ -1,8 +1,9 @@
-from typing import Optional, Type, Union, List, Dict, Sequence
+from typing import Optional, Type, List, Dict, Sequence
 
 from sqlalchemy import select, func, delete, update, union
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from bot.db.types import NumberedModel
 from bot.db.models import (
     User,
     Aliasable,
@@ -13,7 +14,8 @@ from bot.db.models import (
     StorageCurrency,
     Alias,
     Currency,
-    UserDefault, Transaction
+    UserDefault,
+    Transaction
 )
 
 
@@ -21,7 +23,7 @@ class Repository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def _get_max_model_target_for_user(self, user_id: int, colname_target: str, model: Type[Union[Category, Alias, Storage]]):
+    async def _get_max_model_target_for_user(self, user_id: int, colname_target: str, model: Type[NumberedModel]):
         column_target = getattr(model, colname_target)
         column_user_id = getattr(model, "user_id")
 
@@ -35,7 +37,7 @@ class Repository:
 
         return max_target
 
-    async def _get_max_model_number_for_user(self, user_id: int, model: Type[Union[Category, Alias, Storage]]) -> int:
+    async def _get_max_model_number_for_user(self, user_id: int, model: Type[NumberedModel]) -> int:
         max_num = await self._get_max_model_target_for_user(
             user_id=user_id,
             colname_target="number",
@@ -45,7 +47,7 @@ class Repository:
             max_num = 0
         return max_num
 
-    async def _get_model_by_number_for_user(self, user_id: int, number: int, model: Type[Union[Category, Alias, Storage]]) -> Union[Category, Alias, Storage]:
+    async def _get_model_by_number_for_user(self, user_id: int, number: int, model: Type[NumberedModel]) -> Optional[NumberedModel]:
         user_id_column = getattr(model, "user_id")
         number_column = getattr(model, "number")
 
@@ -59,7 +61,7 @@ class Repository:
         model_instance = r.scalar()
         return model_instance
 
-    async def _get_model_for_user(self, user_id: int, model: Type[Union[Category, Alias, Storage]]) -> Sequence[Union[Category, Alias, Storage]]:
+    async def _get_model_for_user(self, user_id: int, model: Type[NumberedModel]) -> Sequence[NumberedModel]:
         if not hasattr(model, "user_id"):
             raise ValueError(f"Model {model.__class__} does not define a column named 'user_id'")
         if not hasattr(model, "number"):
@@ -71,7 +73,7 @@ class Repository:
         )
         return r.scalars().all()
 
-    async def _get_aliasable_id_by_currency_id(self, currency_id: int) -> int:
+    async def _get_aliasable_id_by_currency_id(self, currency_id: int) -> Optional[int]:
         r = await self.session.execute(
             select(Currency.aliasable_id)
             .where(Currency.currency_id == currency_id)
@@ -79,7 +81,7 @@ class Repository:
         currency_id = r.scalar()
         return currency_id
 
-    async def _refresh_model_numbers_for_user(self, user_id: int, model: Type[Union[Category, Alias, Storage]]) -> None:
+    async def _refresh_model_numbers_for_user(self, user_id: int, model: Type[NumberedModel]) -> None:
         if not hasattr(model, "number"):
             raise ValueError(f"Model {model.__class__} does not define a column named 'number'")
         model_instances = await self._get_model_for_user(user_id, model=model)
@@ -171,7 +173,7 @@ class Repository:
     async def get_categories_for_user(self, user_id: int) -> Sequence[Category]:
         return await self._get_model_for_user(user_id, model=Category)
 
-    async def get_category_by_number_for_user(self, user_id: int, number: int) -> Category:
+    async def get_category_by_number_for_user(self, user_id: int, number: int) -> Optional[Category]:
         return await self._get_model_by_number_for_user(user_id, number, model=Category)
 
     async def get_max_category_number_for_user(self, user_id: int) -> int:
@@ -200,14 +202,15 @@ class Repository:
 
     async def set_default_category(self, user_id: int, number: int) -> Category:
         category = await self.get_category_by_number_for_user(user_id, number)
+        # todo: if not category...
         await self._upsert_user_default(user_id, category_id=category.category_id)
         return category
 
     async def get_default_category_for_user(self, user_id: int) -> Optional[Category]:
         user_default = await self.get_user_default(user_id)
         if user_default.category_id:
-            category = self.session.get(Category, user_default.category_id)
-            return await category
+            category = await self.session.get(Category, user_default.category_id)
+            return category
         else:
             return None
 
@@ -258,7 +261,7 @@ class Repository:
     async def get_storages_for_user(self, user_id: int) -> Sequence[Storage]:
         return await self._get_model_for_user(user_id, model=Storage)
 
-    async def get_storage_by_number_for_user(self, user_id: int, number: int) -> Storage:
+    async def get_storage_by_number_for_user(self, user_id: int, number: int) -> Optional[Storage]:
         return await self._get_model_by_number_for_user(user_id, number, model=Storage)
 
     async def get_max_storage_number_for_user(self, user_id: int) -> int:
@@ -287,6 +290,7 @@ class Repository:
 
     async def set_default_storage(self, user_id: int, number: int) -> Storage:
         storage = await self.get_storage_by_number_for_user(user_id, number)
+        # todo: if not storage...
         await self._upsert_user_default(user_id, storage_id=storage.storage_id)
         return storage
 
@@ -321,6 +325,7 @@ class Repository:
                 aliasable_id = category.aliasable_id
         else:
             raise ValueError(f"Aliasable subtype '{subtype}' is not supported")
+        # todo: if not aliasable_id...
 
         number = await self.get_max_alias_number_for_user(user_id=user_id) + 1
 
@@ -336,7 +341,16 @@ class Repository:
     async def get_aliases_for_user(self, user_id: int) -> Sequence[Alias]:
         return await self._get_model_for_user(user_id, model=Alias)
 
-    async def get_alias_by_number_for_user(self, user_id: int, number: int) -> Alias:
+    async def get_aliases_of_subtype_for_user(self, user_id: int, aliasable_subtype: AliasableSubtype) -> Sequence[Alias]:
+        r = await self.session.execute(
+            select(Alias)
+            .where(Alias.user_id == user_id)
+            .where(Aliasable.aliasable_subtype == aliasable_subtype)
+            .join(Aliasable, Alias.aliasable_id == Aliasable.aliasable_id)
+        )
+        return r.scalars().all()
+
+    async def get_alias_by_number_for_user(self, user_id: int, number: int) -> Optional[Alias]:
         return await self._get_model_by_number_for_user(user_id, number, model=Alias)
 
     async def get_aliases_with_full_names_for_user(self, user_id: int) -> List[Dict]:
@@ -346,7 +360,12 @@ class Repository:
         """
 
         alias_user = (
-            select(Alias.aliasable_id, Alias.name.label("alias_name"), Aliasable.aliasable_subtype)
+            select(
+                Alias.aliasable_id,
+                Alias.name.label("alias_name"),
+                Alias.number.label("alias_number"),
+                Aliasable.aliasable_subtype
+            )
             .where(Alias.user_id == user_id)
             .join(Aliasable, Alias.aliasable_id == Aliasable.aliasable_id)
             .subquery()
@@ -356,11 +375,16 @@ class Repository:
         storage_user = select(Storage.aliasable_id, Storage.name.label("name")).where(Storage.user_id == user_id)
         currency = select(Currency.aliasable_id, Currency.name.label("name"))
 
-        u = union(category_user, storage_user, currency).subquery()
+        union_aliasable = union(category_user, storage_user, currency).subquery()
 
         r = await self.session.execute(
-            select(alias_user.c.alias_number, alias_user.c.alias_name, alias_user.c.aliasable_subtype, u.c.name)
-            .join(u, alias_user.c.aliasable_id == u.c.aliasable_id)
+            select(
+                alias_user.c.alias_number,
+                alias_user.c.alias_name,
+                alias_user.c.aliasable_subtype,
+                union_aliasable.c.name
+            )
+            .join(union_aliasable, alias_user.c.aliasable_id == union_aliasable.c.aliasable_id)
             .order_by(alias_user.c.alias_number)
         )
 
@@ -404,8 +428,17 @@ class Repository:
 
     async def set_default_currency(self, user_id: int, alpha_code: str) -> Currency:
         currency = await self.get_currency_by_alpha_code(alpha_code)
+        # todo: if not currency...
         await self._upsert_user_default(user_id, currency_id=currency.currency_id)
         return currency
+
+    async def get_default_currency_for_user(self, user_id: int) -> Optional[Currency]:
+        user_default = await self.get_user_default(user_id)
+        if user_default.currency_id:
+            currency = self.session.get(Currency, user_default.currency_id)
+            return await currency
+        else:
+            return None
 
     async def add_transaction(
             self,
@@ -416,4 +449,12 @@ class Repository:
             amount: float,
             months: int
     ) -> Transaction:
-        pass
+        transaction = Transaction(
+            user_id=user_id,
+            storage_id=storage_id,
+            category_id=category_id,
+            currency_id=currency_id,
+            amount=amount,
+            months=months
+        )
+        return await self.session.merge(transaction)

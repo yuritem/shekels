@@ -106,7 +106,7 @@ async def alias_name(message: Message, state: FSMContext, repo: Repository, user
 )
 async def cmd_delete_alias(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles /delete_alias command"""
-    aliases = get_alias_list(user.user_id, repo)
+    aliases = await get_alias_list(user.user_id, repo)
     await message.answer(f"Provide alias number to delete:\n\n{aliases}")
     await state.set_state(AliasStates.waiting_for_alias_number_to_delete)
 
