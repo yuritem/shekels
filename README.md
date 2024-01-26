@@ -12,6 +12,7 @@ Shekels is designed to be easy and fast to use &mdash; even more so once you _co
 - Set up aliases for caterogies, storages, and currencies to speed things up
 - Set up default categories and storages for even more speed
 - View current balance, stats, and clean monthly reports
+- Exclude categories from balance calculations
 - 150+ currencies avaliable
 
 <!--
