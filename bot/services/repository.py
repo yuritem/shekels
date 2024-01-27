@@ -345,8 +345,8 @@ class Repository:
         r = await self.session.execute(
             select(Alias)
             .where(Alias.user_id == user_id)
-            .where(Aliasable.aliasable_subtype == aliasable_subtype)
             .join(Aliasable, Alias.aliasable_id == Aliasable.aliasable_id)
+            .where(Aliasable.aliasable_subtype == aliasable_subtype)
         )
         return r.scalars().all()
 

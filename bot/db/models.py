@@ -113,7 +113,7 @@ class Storage(Base):
     def __repr__(self) -> str:
         return (f"Storage(storage_id={self.storage_id!r}, user_id={self.user_id!r}, "
                 f"aliasable_id={self.aliasable_id!r}, number={self.number!r}, name={self.name!r}, "
-                f"is_credit={self.is_credit!r}, multicurrency={self.multicurrency!r}")
+                f"is_credit={self.is_credit!r}, multicurrency={self.multicurrency!r})")
 
 
 class StorageCredit(Base):
@@ -153,7 +153,7 @@ class Category(Base):
     user: Mapped["User"] = relationship("User", back_populates="categories")
 
     def __repr__(self) -> str:
-        return (f"Category(category_id={self.category_id!r}), user_id={self.user_id!r}, "
+        return (f"Category(category_id={self.category_id!r}, user_id={self.user_id!r}, "
                 f"aliasable_id={self.aliasable_id!r}, number={self.number!r}, name={self.name!r})")
 
 

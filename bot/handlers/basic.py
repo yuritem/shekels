@@ -6,6 +6,8 @@ from aiogram.filters import CommandStart, Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
+from bot.db.models import User
+from bot.services.repository import Repository
 # from bot.db.models import User
 # from bot.services.repository import Repository
 from bot.states import TransactionStates
@@ -29,18 +31,17 @@ async def cmd_start(message: Message, state: FSMContext):
     TransactionStates.waiting_for_new_transaction,
     TransactionFilter()
 )
-async def transaction(message: Message):
+async def transaction(message: Message, repo: Repository, user: User):
     """
     Handles transactions: standard storage transaction / money transfer between storages / installment payment
-    :param message: Telegram message
     """
+    await message.answer(f"Transaction received")
     # todo: db
     """
     provided (user_id: int, category: str, storage: str, currency: str),
     we don't know if user used any aliases in the names, we need to get their IDs from database
-    or throw an error if we fail
+    or raise an error if we fail
     """
-    await message.answer("Transaction processed.")
 
 
 @router.message(
@@ -49,11 +50,13 @@ async def transaction(message: Message):
 )
 async def cmd_help(message: Message):
     """Handles /help command"""
-    await message.answer("Category & Storage names format (under 40 characters):\n"
-                         "1+ words consisting of letters, numbers, '-', and '_' separated with spaces.\n\n"
-                         "All yes/no entry format - one of the following (case insensitive):\n"
-                         f"{', '.join(YesNoFilter.map.keys())}\n"
-                         "Aliases: 1 word consisting of letters and numbers (under 10 characters)")  # todo
+    await message.answer(
+        "Formats:\n\n"
+        "Categories & Storages: word consisting of letters, numbers, '-', and '_' (under 40 characters):\n\n"
+        "yes/no entry format - one of the following (case insensitive):\n"
+        f"{', '.join(YesNoFilter.map.keys())}\n\n"
+        "Aliases: word consisting of letters and numbers (under 10 characters)"
+    )  # todo
 
 
 @router.message(
