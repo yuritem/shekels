@@ -5,13 +5,13 @@ from aiogram.fsm.storage.memory import SimpleEventIsolation
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 from bot.db.base import Base
-from config import config
+from bot.config import config
 from bot.middlewares.db import DatabaseSessionMiddleware
 from bot.middlewares.user import UserMiddleware
-from handlers import basic, category, alias, storage, currency
-from set_commands import set_commands
-from utils.db import init_database, drop_all_tables
-from utils.log import setup_logging
+from bot.handlers import basic, category, alias, storage, currency
+from bot.set_commands import set_commands
+from bot.utils.db import init_database, drop_all_tables
+from bot.utils.log import setup_logging
 
 
 async def main():

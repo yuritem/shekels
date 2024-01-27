@@ -74,11 +74,6 @@ async def add_and_init_user(telegram_id: int, first_name: str, banned: bool, rep
     user = await repo.add_user(telegram_id, first_name, banned)
     await repo.session.flush()
 
-    await repo.add_category(
-        user_id=user.user_id,
-        name="Transfers between own accounts",
-        factor_in=False
-    )
     category = await repo.add_category(
         user_id=user.user_id,
         name="Uncategorized",

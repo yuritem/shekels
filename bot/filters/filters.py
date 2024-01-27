@@ -10,7 +10,7 @@ from bot.states import TransactionStates
 
 class LongNameFilter(BaseFilter):
     r"""Matches one or several words (consisting of symbols matching [a-zA-Z0-9_\-.]) separated by whitespace"""
-    phrase_pattern = re.compile(r"^[\w\-.]+(?:\s+[\w\-.]+)*$")
+    phrase_pattern = re.compile(r"^[\w\-.]+$")
 
     async def __call__(self, message: Message) -> bool:
         return (re.fullmatch(self.phrase_pattern, message.text) is not None) and (len(message.text) <= 40)

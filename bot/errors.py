@@ -1,2 +1,2 @@
-class ParsingError(Exception):
+class TransacionParsingError(Exception):
     pass
