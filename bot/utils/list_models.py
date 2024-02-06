@@ -33,3 +33,18 @@ async def get_alias_list(user_id: int, repo: Repository):
         for a in aliases
     ])
     return aliases_str
+
+
+async def get_transaction_list(user_id: int, repo: Repository):
+    transactions = await repo.get_transactions_with_names_for_user(user_id)
+    print(transactions[0].keys())
+    print(transactions[0]['Transaction'].__dict__)
+    transactions_str = '\n'.join([
+        f"{t['Transaction'].timestamp.strftime('%Y.%m.%d %H:%M')} "
+        f"{t['Transaction'].amount:.2f} "
+        f"{t['currency_symbol']} "
+        f"{t['storage_name']} "
+        f"({t['category_name']})"
+        for t in transactions
+    ])
+    return transactions_str

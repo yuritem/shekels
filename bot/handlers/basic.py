@@ -12,6 +12,7 @@ from bot.services.repository import Repository
 # from bot.services.repository import Repository
 from bot.states import TransactionStates
 from bot.filters.filters import TransactionFilter, YesNoFilter, NotWaitingForTransactionFilter
+from bot.utils.transaction import parse_and_add_transactions
 
 router: Router = Router()
 logger = logging.getLogger(__name__)
@@ -35,8 +36,10 @@ async def transaction(message: Message, repo: Repository, user: User):
     """
     Handles transactions: standard storage transaction / money transfer between storages / installment payment
     """
-    await message.answer(f"Transaction received")
-    # todo: db
+    await parse_and_add_transactions(message.text, user_id=user.user_id, repo=repo)
+    await message.answer("Transaction added!")
+    transactions = await repo.get_transactions_for_user(user_id=user.user_id)
+    await message.answer('\n'.join(map(str, transactions)))
     """
     provided (user_id: int, category: str, storage: str, currency: str),
     we don't know if user used any aliases in the names, we need to get their IDs from database
@@ -55,7 +58,7 @@ async def cmd_help(message: Message):
         "Categories & Storages: word consisting of letters, numbers, '-', and '_' (under 40 characters):\n\n"
         "yes/no entry format - one of the following (case insensitive):\n"
         f"{', '.join(YesNoFilter.map.keys())}\n\n"
-        "Aliases: word consisting of letters and numbers (under 10 characters)"
+        "Aliases: word consisting of letters and numbers (under 40 characters)"
     )  # todo
 
 

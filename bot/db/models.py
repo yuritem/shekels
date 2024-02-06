@@ -1,14 +1,13 @@
 import datetime
 
-from typing import List, Literal, get_args
+from typing import List, get_args
 from sqlalchemy import ForeignKey, Identity
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql.functions import current_timestamp
-from sqlalchemy.dialects.postgresql import BIGINT, BOOLEAN, VARCHAR, INTEGER, MONEY, TIMESTAMP, ENUM
+from sqlalchemy.dialects.postgresql import BIGINT, BOOLEAN, VARCHAR, INTEGER, NUMERIC, TIMESTAMP, ENUM
 
 from bot.db.base import Base
-
-AliasableSubtype = Literal["category", "storage", "currency"]
+from bot.db.types import AliasableSubtype, RecurrentPeriodUnit
 
 
 class User(Base):
@@ -66,7 +65,7 @@ class Alias(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"))
     aliasable_id: Mapped[int] = mapped_column(ForeignKey("aliasable.aliasable_id"))
     number: Mapped[int] = mapped_column(INTEGER, nullable=False)
-    name: Mapped[str] = mapped_column(VARCHAR(10), nullable=False)
+    name: Mapped[str] = mapped_column(VARCHAR(40), nullable=False)
 
     user: Mapped["User"] = relationship("User", back_populates="aliases")
 
@@ -192,12 +191,44 @@ class Transaction(Base):
         nullable=False,
         server_default=current_timestamp()
     )
-    amount: Mapped[float] = mapped_column(MONEY, nullable=False)
-    months: Mapped[int] = mapped_column(INTEGER, nullable=False)
+    amount: Mapped[float] = mapped_column(NUMERIC(precision=15, scale=2), nullable=False)
 
     user: Mapped["User"] = relationship("User", back_populates="transactions")
 
     def __repr__(self) -> str:
         return (f"Transaction(op_id={self.transaction_id!r}, user_id={self.user_id!r}, storage_id={self.storage_id!r}, "
                 f"category_id={self.category_id!r}, currency_id={self.currency_id!r}, "
-                f"timestamp={self.timestamp!r}, amount={self.amount!r}, months={self.months!r}")
+                f"timestamp={self.timestamp!r}, amount={self.amount!r})")
+
+
+# todo!
+class Recurrent(Base):
+    __tablename__ = "recurrent"
+
+    recurrent_id: Mapped[int] = mapped_column(
+        INTEGER,
+        Identity(always=True, start=1, increment=1),
+        primary_key=True
+    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"), nullable=False)
+    storage_id: Mapped[int] = mapped_column(ForeignKey("storage.storage_id"), nullable=False)
+    category_id: Mapped[int] = mapped_column(ForeignKey("category.category_id"), nullable=False)
+    currency_id: Mapped[int] = mapped_column(ForeignKey("currency.currency_id"), nullable=False)
+    name: Mapped[str] = mapped_column(VARCHAR(40), nullable=False)
+    timestamp: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
+    amount: Mapped[float] = mapped_column(NUMERIC(precision=15, scale=2), nullable=False)
+    period: Mapped[int] = mapped_column(INTEGER, nullable=False)
+    period_unit: Mapped[RecurrentPeriodUnit] = mapped_column(
+        ENUM(
+            *get_args(RecurrentPeriodUnit),
+            name="period_unit",
+            create_type=True
+        ),
+        nullable=False
+    )
+
+    def __repr__(self):
+        return (f"Recurrent(recurrent_id={self.recurrent_id!r}, user_id={self.user_id!r}, "
+                f"storage_id={self.storage_id!r}, category_id={self.category_id!r}, currency_id={self.currency_id!r}, "
+                f"name={self.name!r}, timestamp={self.timestamp!r}, amount={self.amount!r}, period={self.period!r}, "
+                f"period_unit={self.period_unit!r})")

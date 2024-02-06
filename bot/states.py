@@ -49,3 +49,13 @@ class TransactionStates(StatesGroup):
     # add
     waiting_for_new_transaction = State()  # main state
     # todo: edit & delete
+
+
+class RecurrentStates(StatesGroup):
+    # add
+    waiting_for_recurrent_name = State()
+    waiting_for_recurrent_category = State()
+    waiting_for_recurrent_storage = State()
+    waiting_for_recurrent_currency = State()
+    waiting_for_recurrent_amount = State()
+    # todo: edit & delete

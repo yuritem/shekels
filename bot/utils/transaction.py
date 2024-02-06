@@ -16,12 +16,9 @@ async def _aliasable_model(
         repo: Repository
 ) -> Optional[AliasableModel]:
 
-    print(f"Called with: text={text}, model={model}")
-
     text_casefold = text.casefold()
 
     if model == Currency:
-        print("model is Currency")
         name_field = 'alpha_code'
     else:
         name_field = 'name'
@@ -66,11 +63,7 @@ async def _category(text: str, categories: Sequence[Category], category_aliases:
     )
 
 
-async def parse_transaction(
-        text: str,
-        user_id: int,
-        repo: Repository
-):
+async def parse_and_add_transactions(text: str, user_id: int, repo: Repository) -> None:
 
     category_default = await repo.get_default_category_for_user(user_id)
     storage_default = await repo.get_default_storage_for_user(user_id)
@@ -80,21 +73,23 @@ async def parse_transaction(
     categories = await repo.get_categories_for_user(user_id)
     currencies = await repo.get_currencies()
 
-    storage_aliases = await repo.get_aliases_of_subtype_for_user(user_id, "storage")
-    category_aliases = await repo.get_aliases_of_subtype_for_user(user_id, "category")
-    currency_aliases = await repo.get_aliases_of_subtype_for_user(user_id, "currency")
+    storage_aliases = await repo.get_storage_aliases_for_user(user_id)
+    category_aliases = await repo.get_category_aliases_for_user(user_id)
+    currency_aliases = await repo.get_currency_aliases_for_user(user_id)
 
     match = re.fullmatch(TransactionFilter.transaction_pattern, text)
     if not match:
         raise TransacionParsingError("Message does not conform to pattern.")
-    amount, months, slot_0, slot_1, slot_2 = match.groups()
+    amount_total, months, slot_0, slot_1, slot_2 = match.groups()
+    if not amount_total:
+        raise TransacionParsingError("Amount could not be parsed. Perhaps you passed more than 2 decimal points.")
 
-    if '+' in amount or '-' in amount:
-        amount = float(amount)
+    if '+' in amount_total or '-' in amount_total:
+        amount_total = float(amount_total)
     else:
-        amount = -float(amount)  # negative amount by default
+        amount_total = -float(amount_total)  # negative amount by default
 
-    months = None if months is None else int(months)
+    months = 1 if months is None else int(months)
 
     if (slot_0 is not None) and (currency_ := await _currency(slot_0, currencies, currency_aliases, repo)):
         currency = currency_
@@ -137,10 +132,18 @@ async def parse_transaction(
     else:
         raise TransacionParsingError("Failed to parse storage or category.")
 
-    return {
-        "amount": amount,
-        "months": months,
-        "currency": currency,
-        "storage": storage,
-        "category": category
-    }
+    if currency is None or storage is None or category is None:
+        raise TransacionParsingError("One or more defaults missing and not passed explicitly.")
+
+    await repo.add_transactions(
+        user_id=user_id,
+        amount_total=amount_total,
+        months=months,
+        currency_id=currency.currency_id,
+        storage_id=storage.storage_id,
+        category_id=category.category_id
+    )
+
+
+def parse_and_add_recurrent_transactions(text: str, user_id: int, repo: Repository) -> None:
+    pass

@@ -4,12 +4,22 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 from bot.db.models import User
-from bot.filters.filters import AliasableSubtypeFilter, NumberFilter, ShortNameFilter
+from bot.filters.filters import AliasableSubtypeFilter, NumberFilter, NameFilter
 from bot.services.repository import Repository
 from bot.states import AliasStates, TransactionStates
 from bot.utils.list_models import get_alias_list, get_storage_list, get_category_list
 
 router = Router()
+
+
+@router.message(
+    Command("list_aliases"),
+    TransactionStates.waiting_for_new_transaction
+)
+async def cmd_list_aliases(message: Message, repo: Repository, user: User):
+    """Handles /list_aliases command"""
+    aliases = await get_alias_list(user.user_id, repo)
+    await message.answer(f"List of aliases:\n\n{aliases}")
 
 
 @router.message(
@@ -80,7 +90,7 @@ async def currency_alphacode(message: Message, state: FSMContext, repo: Reposito
 
 @router.message(
     AliasStates.waiting_for_alias_name,
-    ShortNameFilter()
+    NameFilter()
 )
 async def alias_name(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles alias_name entry in the process of /add_alias command"""
