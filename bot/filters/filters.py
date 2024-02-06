@@ -8,19 +8,12 @@ from bot.db.models import AliasableSubtype
 from bot.states import TransactionStates
 
 
-class LongNameFilter(BaseFilter):
-    r"""Matches one or several words (consisting of symbols matching [a-zA-Z0-9_\-.]) separated by whitespace"""
-    phrase_pattern = re.compile(r"^[\w\-.]+$")
+class NameFilter(BaseFilter):
+    r"""Matches a word consisting of symbols matching [a-zA-Z0-9_\-.]"""
+    phrase_pattern = re.compile(r"^[\w\-.']{1,40}$")
 
     async def __call__(self, message: Message) -> bool:
         return (re.fullmatch(self.phrase_pattern, message.text) is not None) and (len(message.text) <= 40)
-
-
-class ShortNameFilter(BaseFilter):
-    word_pattern = re.compile(r"\w+")
-
-    async def __call__(self, message: Message) -> bool:
-        return (re.fullmatch(self.word_pattern, message.text) is not None) and (len(message.text) <= 10)
 
 
 class YesNoFilter(BaseFilter):
@@ -66,7 +59,7 @@ class AliasableSubtypeFilter(BaseFilter):
 
 class TransactionFilter(BaseFilter):
     transaction_pattern = re.compile(
-        r"([+-]?\d+(?:\.\d*)?)"  # amount (required)
+        r"([+-]?\d+(?:\.\d{,2})?)"  # amount (required)
         r"(?:/(\d+))?"  # months for installment payments (optional)
         r"(?:\s+([\w\-.]+))?"  # currency (optional)
         r"(?:\s+([\w\-.]+))?"  # storage 1 (optional)

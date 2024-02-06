@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 from bot.db.models import User
-from bot.filters.filters import NumberFilter, LongNameFilter, YesNoFilter, DayOfTheMonthFilter
+from bot.filters.filters import NumberFilter, NameFilter, YesNoFilter, DayOfTheMonthFilter
 from bot.services.repository import Repository
 from bot.states import StorageStates, TransactionStates
 from bot.utils.list_models import get_storage_list
@@ -34,7 +34,7 @@ async def cmd_add_storage(message: Message, state: FSMContext):
 
 @router.message(
     StorageStates.waiting_for_new_storage_name,
-    LongNameFilter()
+    NameFilter()
 )
 async def storage_name_to_add(message: Message, state: FSMContext):
     """Handles storage_name entry after /add_storage command"""
@@ -152,7 +152,7 @@ async def storage_number_to_edit(message: Message, state: FSMContext, repo: Repo
 
 @router.message(
     StorageStates.waiting_for_edited_storage_name,
-    LongNameFilter()
+    NameFilter()
 )
 async def storage_name_to_edit(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles storage_name_to_edit in the process of /edit_storage command"""

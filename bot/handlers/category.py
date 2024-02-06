@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 from bot.db.models import User
-from bot.filters.filters import LongNameFilter, YesNoFilter, NumberFilter
+from bot.filters.filters import NameFilter, YesNoFilter, NumberFilter
 from bot.services.repository import Repository
 from bot.states import CategoryStates, TransactionStates
 from bot.utils.list_models import get_category_list
@@ -34,7 +34,7 @@ async def cmd_add_category(message: Message, state: FSMContext):
 
 @router.message(
     CategoryStates.waiting_for_new_category_name,
-    LongNameFilter()
+    NameFilter()
 )
 async def category_name_to_add(message: Message, state: FSMContext):
     """Handles category_name entry after /add_category command"""
@@ -52,8 +52,8 @@ async def category_factor_in_to_add(message: Message, state: FSMContext, repo: R
     state_data = await state.get_data()
     category_name = state_data.get("category_name")
     factor_in = YesNoFilter.map[message.text.lower()]
-    await repo.add_category(user_id=user.user_id, name=category_name, factor_in=factor_in)
-    await message.answer("Category created!")
+    category = await repo.add_category(user_id=user.user_id, name=category_name, factor_in=factor_in)
+    await message.answer(f"Category '{category.name}' created!")
     await state.set_state(TransactionStates.waiting_for_new_transaction)
 
 
@@ -86,7 +86,7 @@ async def category_number_to_edit(message: Message, state: FSMContext, repo: Rep
 
 @router.message(
     CategoryStates.waiting_for_edited_category_name,
-    LongNameFilter()
+    NameFilter()
 )
 async def category_name_to_edit(message: Message, state: FSMContext):
     """Handles category_name entry in the process of /edit_category command"""

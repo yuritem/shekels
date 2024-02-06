@@ -1,3 +1,5 @@
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from typing import Optional, Type, List, Dict, Sequence
 
 from sqlalchemy import select, func, delete, update, union
@@ -350,6 +352,15 @@ class Repository:
         )
         return r.scalars().all()
 
+    async def get_storage_aliases_for_user(self, user_id: int) -> Sequence[Alias]:
+        return await self.get_aliases_of_subtype_for_user(user_id, aliasable_subtype="storage")
+
+    async def get_category_aliases_for_user(self, user_id: int) -> Sequence[Alias]:
+        return await self.get_aliases_of_subtype_for_user(user_id, aliasable_subtype="category")
+
+    async def get_currency_aliases_for_user(self, user_id: int) -> Sequence[Alias]:
+        return await self.get_aliases_of_subtype_for_user(user_id, aliasable_subtype="currency")
+
     async def get_alias_by_number_for_user(self, user_id: int, number: int) -> Optional[Alias]:
         return await self._get_model_by_number_for_user(user_id, number, model=Alias)
 
@@ -440,21 +451,72 @@ class Repository:
         else:
             return None
 
-    async def add_transaction(
+    async def add_transactions(
             self,
             user_id: int,
             storage_id: int,
             category_id: int,
             currency_id: int,
-            amount: float,
+            amount_total: float,
             months: int
-    ) -> Transaction:
-        transaction = Transaction(
-            user_id=user_id,
-            storage_id=storage_id,
-            category_id=category_id,
-            currency_id=currency_id,
-            amount=amount,
-            months=months
+    ) -> None:
+
+        sign = 1 if amount_total > 0 else -1
+        amount_total = abs(amount_total)
+
+        amount_total_cents = int(round(amount_total * 100, 0))
+        amount_cents = amount_total_cents // months
+        remaining_cents = amount_total_cents % months
+
+        amounts_cents = [amount_cents for _ in range(months)]
+        for i in range(remaining_cents):
+            amounts_cents[i] += 1
+        amounts = [sign * a / 100 for a in amounts_cents]
+
+        now = datetime.now()
+        timestamps = [
+            now + relativedelta(months=+i)
+            for i in range(months)
+        ]
+
+        transactions = [
+            Transaction(
+                user_id=user_id,
+                storage_id=storage_id,
+                category_id=category_id,
+                currency_id=currency_id,
+                timestamp=timestamp,
+                amount=amount
+            )
+            for timestamp, amount in zip(timestamps, amounts)
+        ]
+
+        self.session.add_all(transactions)
+
+    async def get_transactions_for_user(self, user_id: int) -> Sequence[Transaction]:
+        r = await self.session.execute(
+            select(Transaction)
+            .where(Transaction.user_id == user_id)
         )
-        return await self.session.merge(transaction)
+        return r.scalars().all()
+
+    async def get_transactions_with_names_for_user(self, user_id: int) -> List[Dict]:
+
+        r = await self.session.execute(
+            select(
+                Transaction,
+                Category.name.label("category_name"),
+                Storage.name.label("storage_name"),
+                Currency.symbol.label("currency_symbol"),
+                Currency.alpha_code.label("currency_alpha_code")
+            )
+            .join(Category, Transaction.category_id == Category.category_id)
+            .join(Storage, Transaction.storage_id == Storage.storage_id)
+            .join(Currency, Transaction.currency_id == Currency.currency_id)
+            .where(Transaction.user_id == user_id)
+        )
+        return [row._asdict() for row in r.all()]
+
+    # todo!
+    async def renew_recurrent_transactions(self, user_id: int) -> None:
+        pass

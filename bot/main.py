@@ -8,7 +8,7 @@ from bot.db.base import Base
 from bot.config import config
 from bot.middlewares.db import DatabaseSessionMiddleware
 from bot.middlewares.user import UserMiddleware
-from bot.handlers import basic, category, alias, storage, currency
+from bot.handlers import basic, category, alias, storage, currency, transaction
 from bot.set_commands import set_commands
 from bot.utils.db import init_database, drop_all_tables
 from bot.utils.log import setup_logging
@@ -43,7 +43,8 @@ async def main():
         category.router,
         alias.router,
         storage.router,
-        currency.router
+        currency.router,
+        transaction.router
     )
 
     bot = Bot(token=config.BOT_TOKEN.get_secret_value(), parse_mode='HTML')
