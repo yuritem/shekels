@@ -14,10 +14,12 @@ Shekels is designed to be easy and fast to use out of the box &mdash; but even m
 - View current balance, stats, and clean monthly reports
 - Exclude categories from balance calculations
 - 150+ currencies avaliable
-
-<!--
+
 ## Overview
 
+TBS
+
+<!--
 ### Storages
 
 ### Categories
