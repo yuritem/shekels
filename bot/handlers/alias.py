@@ -51,7 +51,7 @@ async def aliasable_subtype(message: Message, state: FSMContext, repo: Repositor
         await message.answer("Currency 3-letter alphacode:")
         await state.set_state(AliasStates.waiting_for_currency_alphacode)
     else:
-        await message.answer("Unknown type. Try again.")  # todo: log
+        await message.answer("Unknown type. Try again.")
 
 
 @router.message(

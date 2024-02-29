@@ -1,4 +1,3 @@
-# todo: i18n
 import logging
 
 from aiogram import Router
@@ -78,5 +77,4 @@ async def cmd_cancel(message: Message, state: FSMContext):
 )
 async def cmd_balance(message: Message):
     """Handles /balance command"""
-    # todo: db
-    await message.answer("Balance message.")
+    await message.answer("TBD")
