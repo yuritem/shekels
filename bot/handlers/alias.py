@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 from bot.db.models import User
-from bot.filters.filters import AliasableSubtypeFilter, NumberFilter, NameFilter
+from bot.filters.filters import AliasableSubtypeFilter, IntegerFilter, NameFilter
 from bot.services.repository import Repository
 from bot.states import AliasStates, TransactionStates
 from bot.utils.list_models import get_alias_list, get_storage_list, get_category_list
@@ -56,7 +56,7 @@ async def aliasable_subtype(message: Message, state: FSMContext, repo: Repositor
 
 @router.message(
     AliasStates.waiting_for_aliasable_number,
-    NumberFilter()
+    IntegerFilter()
 )
 async def aliasable_number_to_add(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles aliasable_number entry in the process of /add_alias command"""
@@ -67,7 +67,7 @@ async def aliasable_number_to_add(message: Message, state: FSMContext, repo: Rep
         max_aliasable_number = await repo.get_max_storage_number_for_user(user.user_id)
     else:
         max_aliasable_number = await repo.get_max_category_number_for_user(user.user_id)
-    if aliasable_number <= max_aliasable_number:
+    if 1 <= aliasable_number <= max_aliasable_number:
         await state.update_data({"aliasable_number": aliasable_number})
         await message.answer("Your alias:")
         await state.set_state(AliasStates.waiting_for_alias_name)
@@ -123,13 +123,13 @@ async def cmd_delete_alias(message: Message, state: FSMContext, repo: Repository
 
 @router.message(
     AliasStates.waiting_for_alias_number_to_delete,
-    NumberFilter()
+    IntegerFilter()
 )
 async def alias_number_to_delete(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles number entry after /delete_alias command"""
     alias_number = int(message.text)
     max_alias_number = await repo.get_max_alias_number_for_user(user.user_id)
-    if alias_number <= max_alias_number:
+    if 1 <= alias_number <= max_alias_number:
         await repo.delete_alias(user.user_id, alias_number)
         await message.answer("Alias deleted.")
         await state.set_state(TransactionStates.waiting_for_new_transaction)

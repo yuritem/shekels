@@ -5,7 +5,7 @@ from typing import Optional, Type, List, Dict, Sequence
 from sqlalchemy import select, func, delete, update, union
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.db.types import NumberedModel
+from bot.db.types import NumberedModel, RecurrentPeriodUnit
 from bot.db.models import (
     User,
     Aliasable,
@@ -516,6 +516,20 @@ class Repository:
             .where(Transaction.user_id == user_id)
         )
         return [row._asdict() for row in r.all()]
+
+    async def add_recurrent_transaction(
+            self,
+            user_id: int,
+            storage_id: int,
+            category_id: int,
+            currency_id: int,
+            name: str,
+            amount: float,
+            start_timestamp: datetime,
+            period: int,
+            period_unit: RecurrentPeriodUnit
+    ) -> None:
+        pass
 
     # todo!
     async def renew_recurrent_transactions(self, user_id: int) -> None:
