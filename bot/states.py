@@ -54,8 +54,10 @@ class TransactionStates(StatesGroup):
 class RecurrentStates(StatesGroup):
     # add
     waiting_for_recurrent_name = State()
-    waiting_for_recurrent_category = State()
-    waiting_for_recurrent_storage = State()
-    waiting_for_recurrent_currency = State()
     waiting_for_recurrent_amount = State()
+    waiting_for_recurrent_currency = State()
+    waiting_for_recurrent_storage = State()
+    waiting_for_recurrent_category = State()
+    waiting_for_recurrent_timestamp = State()
+    waiting_for_recurrent_periodicity = State()
     # todo: edit & delete

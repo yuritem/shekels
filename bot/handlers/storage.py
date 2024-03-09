@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 from bot.db.models import User
-from bot.filters.filters import NumberFilter, NameFilter, YesNoFilter, DayOfTheMonthFilter
+from bot.filters.filters import IntegerFilter, NameFilter, YesNoFilter, DayOfTheMonthFilter
 from bot.services.repository import Repository
 from bot.states import StorageStates, TransactionStates
 from bot.utils.list_models import get_storage_list
@@ -136,13 +136,13 @@ async def cmd_edit_storage(message: Message, state: FSMContext, repo: Repository
 
 @router.message(
     StorageStates.waiting_for_storage_number_to_edit,
-    NumberFilter()
+    IntegerFilter()
 )
 async def storage_number_to_edit(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles storage_number entry in the process of /edit_storage command"""
     storage_number = int(message.text)
     max_storage_number = await repo.get_max_storage_number_for_user(user.user_id)
-    if storage_number <= max_storage_number:
+    if 1 <= storage_number <= max_storage_number:
         await state.update_data({"storage_number": storage_number})
         await message.answer("New storage name:")
         await state.set_state(StorageStates.waiting_for_edited_storage_name)
@@ -178,13 +178,13 @@ async def cmd_delete_storage(message: Message, state: FSMContext, repo: Reposito
 
 @router.message(
     StorageStates.waiting_for_storage_number_to_delete,
-    NumberFilter()
+    IntegerFilter()
 )
 async def storage_number_to_delete(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles storage_number entry after /delete_storage command"""
     storage_number = int(message.text)
     max_storage_number = await repo.get_max_storage_number_for_user(user.user_id)
-    if storage_number <= max_storage_number:
+    if 1 <= storage_number <= max_storage_number:
         await repo.delete_storage(user_id=user.user_id, number=storage_number)
         await message.answer(f"Storage deleted.")
         await state.set_state(TransactionStates.waiting_for_new_transaction)
@@ -205,13 +205,13 @@ async def cmd_set_default_storage(message: Message, state: FSMContext, repo: Rep
 
 @router.message(
     StorageStates.waiting_for_storage_number_to_set_default,
-    NumberFilter()
+    IntegerFilter()
 )
 async def storage_number_to_set_default(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles storage_number entry after /set_default_storage command"""
     storage_number = int(message.text)
     max_storage_number = await repo.get_max_storage_number_for_user(user.user_id)
-    if storage_number <= max_storage_number:
+    if 1 <= storage_number <= max_storage_number:
         storage = await repo.set_default_storage(user.user_id, number=storage_number)
         await message.answer(f"Storage '{storage.name}' is now default!")
         await state.set_state(TransactionStates.waiting_for_new_transaction)

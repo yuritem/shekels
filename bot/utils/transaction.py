@@ -143,7 +143,3 @@ async def parse_and_add_transactions(text: str, user_id: int, repo: Repository) 
         storage_id=storage.storage_id,
         category_id=category.category_id
     )
-
-
-def parse_and_add_recurrent_transactions(text: str, user_id: int, repo: Repository) -> None:
-    pass

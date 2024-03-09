@@ -32,14 +32,21 @@ class YesNoFilter(BaseFilter):
         return message.text.lower() in self.map
 
 
-class NumberFilter(BaseFilter):
+class PeriodicityFilter(BaseFilter):
+    periodicity_pattern = re.compile(r"(\d+)([dwmy])")
+
+    async def __call__(self, message: Message) -> bool:
+        return re.fullmatch(self.periodicity_pattern, message.text) is not None
+
+
+class IntegerFilter(BaseFilter):
     number_pattern = r"\d+"
 
     async def __call__(self, message: Message) -> bool:
         return re.fullmatch(self.number_pattern, message.text) is not None
 
 
-class DayOfTheMonthFilter(NumberFilter):
+class DayOfTheMonthFilter(IntegerFilter):
 
     async def __call__(self, message: Message) -> bool:
         match = re.fullmatch(self.number_pattern, message.text)
@@ -48,6 +55,20 @@ class DayOfTheMonthFilter(NumberFilter):
             if num in range(1, 32):
                 return True
         return False
+
+
+class FloatFilter(BaseFilter):
+    number_pattern = r"[+-]?\d+(?:\.\d*)?"
+
+    async def __call__(self, message: Message) -> bool:
+        return re.fullmatch(self.number_pattern, message.text) is not None
+
+
+class DateTimeFilter(BaseFilter):
+    datetime_pattern = r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}"
+
+    async def __call__(self, message: Message) -> bool:
+        return re.fullmatch(self.datetime_pattern, message.text) is not None
 
 
 class AliasableSubtypeFilter(BaseFilter):

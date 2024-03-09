@@ -26,7 +26,7 @@ Shekels is designed to be really easy and fast to use once configured.
 - [Sqlalchemy 2.x](https://www.sqlalchemy.org/)
 - [Pydantic 2.x](https://github.com/pydantic/pydantic)
 - [Poetry](https://python-poetry.org/)
-- [Postgresql](https://www.postgresql.org/)
+- [PostgreSQL](https://www.postgresql.org/)
 - [Redis](https://redis.io/)
 
 ## Usage

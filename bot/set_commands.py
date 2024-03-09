@@ -16,13 +16,15 @@ COMMANDS = {
     "delete_storage": "Delete existing storage",
     "add_alias": "Add new alias",
     "delete_alias": "Delete existing alias",
+    "add_recurrent": "Add new recurrent transaction",
     "set_default_category": "Set default category",
     "set_default_storage": "Set default storage",
     "set_default_currency": "Set default currency",
-    "list_categories": "Get a list of your categories",
-    "list_storages": "Get a list of your categories",
-    "list_aliases": "Get a list of your aliases",
-    "list_transactions": "Get a list of your transactions"
+    "list_categories": "List my categories",
+    "list_storages": "List my categories",
+    "list_aliases": "List my aliases",
+    "list_transactions": "List my transactions"
+    # "list_recurrent_transactions": "List my recurrent transactions"
 }
 
 

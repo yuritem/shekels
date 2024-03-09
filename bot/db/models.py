@@ -215,8 +215,9 @@ class Recurrent(Base):
     category_id: Mapped[int] = mapped_column(ForeignKey("category.category_id"), nullable=False)
     currency_id: Mapped[int] = mapped_column(ForeignKey("currency.currency_id"), nullable=False)
     name: Mapped[str] = mapped_column(VARCHAR(40), nullable=False)
-    timestamp: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
     amount: Mapped[float] = mapped_column(NUMERIC(precision=15, scale=2), nullable=False)
+    start_timestamp: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
+    last_timestamp: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
     period: Mapped[int] = mapped_column(INTEGER, nullable=False)
     period_unit: Mapped[RecurrentPeriodUnit] = mapped_column(
         ENUM(
@@ -230,5 +231,5 @@ class Recurrent(Base):
     def __repr__(self):
         return (f"Recurrent(recurrent_id={self.recurrent_id!r}, user_id={self.user_id!r}, "
                 f"storage_id={self.storage_id!r}, category_id={self.category_id!r}, currency_id={self.currency_id!r}, "
-                f"name={self.name!r}, timestamp={self.timestamp!r}, amount={self.amount!r}, period={self.period!r}, "
-                f"period_unit={self.period_unit!r})")
+                f"name={self.name!r}, amount={self.amount!r}, start_timestamp={self.start_timestamp!r}, "
+                f"last_timestamp={self.last_timestamp!r}, period={self.period!r}, period_unit={self.period_unit!r})")
