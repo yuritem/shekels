@@ -5,7 +5,7 @@ from bot.db.models import Storage, Alias, Currency, Category
 from bot.filters.filters import TransactionFilter
 from bot.errors import TransacionParsingError
 from bot.services.repository import Repository
-from bot.db.types import AliasableModel
+from bot.db.model_types import AliasableModel
 
 
 async def _aliasable_model(

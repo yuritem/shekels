@@ -5,7 +5,8 @@ from typing import Optional, Type, List, Dict, Sequence
 from sqlalchemy import select, func, delete, update, union
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.db.types import NumberedModel, RecurrentPeriodUnit
+from bot.db.types import RecurrentPeriodUnit
+from bot.db.model_types import NumberedModel
 from bot.db.models import (
     User,
     Aliasable,
