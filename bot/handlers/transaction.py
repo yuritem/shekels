@@ -96,6 +96,7 @@ async def recurrent_category_number(message: Message, state: FSMContext, user: U
     if 1 <= category_number <= max_category_number:
         await state.update_data({"recurrent_category_number": category_number})
         await message.answer("Provide recurrent transaction's periodicity. Examples: '1d', '2w', '1m', '1y':")
+        await state.set_state(RecurrentStates.waiting_for_recurrent_periodicity)
 
 
 @router.message(
@@ -138,3 +139,4 @@ async def recurrent_timestamp(message: Message, state: FSMContext, user: User, r
         period_unit=period_unit
     )
     await message.answer(f"Recurrent transaction '{name}' added successfully!")
+    await state.set_state(TransactionStates.waiting_for_new_transaction)
