@@ -123,8 +123,7 @@ async def recurrent_timestamp(message: Message, state: FSMContext, user: User, r
     storage = await repo.get_storage_by_number_for_user(user_id=user.user_id, number=storage_number)
     category_number = state_data.get("recurrent_category_number")
     category = await repo.get_category_by_number_for_user(user_id=user.user_id, number=category_number)
-    alpha_code = state_data.get("recurrent_currency")
-    currency = await repo.get_currency_by_alpha_code(alpha_code=alpha_code)
+    currency = state_data.get("recurrent_currency")
     period = state_data.get("recurrent_period")
     period_unit = state_data.get("recurrent_period_unit")
     await repo.add_recurrent_transaction(
