@@ -1,5 +1,4 @@
 from datetime import datetime
-from dateutil.relativedelta import relativedelta
 from typing import Optional, Type, List, Dict, Sequence
 
 from sqlalchemy import select, func, delete, update, union
@@ -18,8 +17,9 @@ from bot.db.models import (
     Alias,
     Currency,
     UserDefault,
-    Transaction
+    Transaction, Recurrent
 )
+from bot.utils.transaction import split_transaction
 
 
 class Repository:
@@ -462,23 +462,7 @@ class Repository:
             months: int
     ) -> None:
 
-        sign = 1 if amount_total > 0 else -1
-        amount_total = abs(amount_total)
-
-        amount_total_cents = int(round(amount_total * 100, 0))
-        amount_cents = amount_total_cents // months
-        remaining_cents = amount_total_cents % months
-
-        amounts_cents = [amount_cents for _ in range(months)]
-        for i in range(remaining_cents):
-            amounts_cents[i] += 1
-        amounts = [sign * a / 100 for a in amounts_cents]
-
-        now = datetime.now()
-        timestamps = [
-            now + relativedelta(months=+i)
-            for i in range(months)
-        ]
+        timestamps, amounts = split_transaction(amount_total, months)
 
         transactions = [
             Transaction(
@@ -528,9 +512,26 @@ class Repository:
             amount: float,
             start_timestamp: datetime,
             period: int,
-            period_unit: RecurrentPeriodUnit
+            period_unit: RecurrentPeriodUnit,
+            next_timestamp: Optional[datetime] = None
     ) -> None:
-        pass
+
+        next_timestamp = next_timestamp or start_timestamp
+
+        recurrent_transaction = Recurrent(
+            user_id=user_id,
+            storage_id=storage_id,
+            category_id=category_id,
+            currency_id=currency_id,
+            name=name,
+            amount=amount,
+            start_timestamp=start_timestamp,
+            next_timestamp=next_timestamp,
+            period=period,
+            period_unit=period_unit
+        )
+
+        await self.session.merge(recurrent_transaction)
 
     # todo!
     async def renew_recurrent_transactions(self, user_id: int) -> None:
