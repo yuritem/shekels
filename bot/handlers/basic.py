@@ -11,7 +11,7 @@ from bot.services.repository import Repository
 # from bot.services.repository import Repository
 from bot.states import TransactionStates
 from bot.filters.filters import TransactionFilter, YesNoFilter, NotWaitingForTransactionFilter
-from bot.utils.transaction import parse_and_add_transactions
+from bot.utils.parse_transaction import parse_and_add_transactions
 
 router: Router = Router()
 logger = logging.getLogger(__name__)

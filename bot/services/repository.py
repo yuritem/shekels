@@ -17,8 +17,10 @@ from bot.db.models import (
     Alias,
     Currency,
     UserDefault,
-    Transaction, Recurrent
+    Transaction,
+    Recurrent
 )
+from bot.utils.recurrent import recurrent_timestamps
 from bot.utils.transaction import split_transaction
 
 
@@ -533,6 +535,46 @@ class Repository:
 
         await self.session.merge(recurrent_transaction)
 
-    # todo!
+    async def get_recurrent_transactions_for_user(self, user_id: int) -> Sequence[Recurrent]:
+        r = await self.session.execute(
+            select(Recurrent)
+            .where(Recurrent.user_id == user_id)
+        )
+        return r.scalars().all()
+
+    async def update_recurrent_transaction(
+            self,
+            recurrent_id: int,
+            next_timestamp: datetime,
+    ) -> None:
+        recurrent_transaction = await self.session.get(Recurrent, recurrent_id)
+        recurrent_transaction.next_timestamp = next_timestamp
+        await self.session.merge(recurrent_transaction)
+
+    async def _renew_recurrent_transaction(self, recurrent_transaction: Recurrent) -> None:
+        timestamps, next_timestamp = recurrent_timestamps(
+            next_timestamp=recurrent_transaction.next_timestamp,
+            period=recurrent_transaction.period,
+            period_unit=recurrent_transaction.period_unit
+        )
+
+        if timestamps:
+            transactions = [
+                Transaction(
+                    user_id=recurrent_transaction.user_id,
+                    storage_id=recurrent_transaction.storage_id,
+                    category_id=recurrent_transaction.category_id,
+                    currency_id=recurrent_transaction.currency_id,
+                    timestamp=timestamp,
+                    amount=recurrent_transaction.amount
+                )
+                for timestamp in timestamps
+            ]
+            await self.update_recurrent_transaction(recurrent_transaction.recurrent_id, next_timestamp)
+
+            self.session.add_all(transactions)
+
     async def renew_recurrent_transactions(self, user_id: int) -> None:
-        pass
+        recurrent_transactions = await self.get_recurrent_transactions_for_user(user_id)
+        for recurrent_transaction in recurrent_transactions:
+            await self._renew_recurrent_transaction(recurrent_transaction)
