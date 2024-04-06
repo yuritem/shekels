@@ -5,7 +5,7 @@ from sqlalchemy import select, func, delete, update, union
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.db.types import RecurrentPeriodUnit
-from bot.db.model_types import NumberedModel
+from bot.db.model_types import NumberedModel, ModelWithDefault
 from bot.db.models import (
     User,
     Aliasable,
@@ -118,30 +118,24 @@ class Repository:
         )
         return await self.session.merge(storage_currency)
 
-    async def _upsert_user_default(
+    async def _model_is_default_for_user(self, user_id: int, model: Type[ModelWithDefault], id_: int) -> bool:
+        model_id_column = model.__name__ + "_id"
+        user_default = await self.get_user_default(user_id)
+        if not user_default or getattr(user_default, model_id_column) != id_:
+            return False
+        return True
+
+    async def _upsert_user_default_model(
             self,
             user_id: int,
-            category_id: Optional[int] = None,
-            storage_id: Optional[int] = None,
-            currency_id: Optional[int] = None
+            model: Type[ModelWithDefault],
+            id_: int | None
     ) -> UserDefault:
+        model_id_column = model.__name__ + "_id"
         user_default = await self.get_user_default(user_id)
-
         if user_default is None:
-            user_default = UserDefault(
-                user_id=user_id,
-                category_id=category_id,
-                storage_id=storage_id,
-                currency_id=currency_id
-            )
-        else:
-            if category_id is not None:
-                user_default.category_id = category_id
-            if storage_id is not None:
-                user_default.storage_id = storage_id
-            if currency_id is not None:
-                user_default.currency_id = currency_id
-
+            user_default = UserDefault(user_id=user_id)
+        setattr(user_default, model_id_column, id_)
         return await self.session.merge(user_default)
 
     async def add_user(self, telegram_id: int, first_name: str, banned: bool) -> User:
@@ -200,6 +194,8 @@ class Repository:
     async def delete_category(self, user_id: int, number: int) -> None:
         # todo: what to do with Transaction table?
         category = await self.get_category_by_number_for_user(user_id, number)
+        if await self._model_is_default_for_user(user_id, model=Category, id_=category.category_id):
+            await self._upsert_user_default_model(user_id, model=Category, id_=None)
         await self._delete_aliasable(category.aliasable_id)
         await self.session.delete(category)
         await self.session.flush()
@@ -208,7 +204,7 @@ class Repository:
     async def set_default_category(self, user_id: int, number: int) -> Category:
         category = await self.get_category_by_number_for_user(user_id, number)
         # todo: if not category...
-        await self._upsert_user_default(user_id, category_id=category.category_id)
+        await self._upsert_user_default_model(user_id, model=Category, id_=category.category_id)
         return category
 
     async def get_default_category_for_user(self, user_id: int) -> Optional[Category]:
@@ -288,6 +284,8 @@ class Repository:
     async def delete_storage(self, user_id: int, number: int) -> None:
         # todo: what to do with Transaction table?
         storage = await self.get_storage_by_number_for_user(user_id, number)
+        if await self._model_is_default_for_user(user_id, model=Storage, id_=storage.storage_id):
+            await self._upsert_user_default_model(user_id, model=Storage, id_=None)
         await self._delete_aliasable(storage.aliasable_id)
         await self.session.delete(storage)
         await self.session.flush()
@@ -296,7 +294,7 @@ class Repository:
     async def set_default_storage(self, user_id: int, number: int) -> Storage:
         storage = await self.get_storage_by_number_for_user(user_id, number)
         # todo: if not storage...
-        await self._upsert_user_default(user_id, storage_id=storage.storage_id)
+        await self._upsert_user_default_model(user_id, model=Storage, id_=storage.storage_id)
         return storage
 
     async def get_default_storage_for_user(self, user_id: int) -> Optional[Storage]:
@@ -443,7 +441,7 @@ class Repository:
     async def set_default_currency(self, user_id: int, alpha_code: str) -> Currency:
         currency = await self.get_currency_by_alpha_code(alpha_code)
         # todo: if not currency...
-        await self._upsert_user_default(user_id, currency_id=currency.currency_id)
+        await self._upsert_user_default_model(user_id, model=Currency, id_=currency.currency_id)
         return currency
 
     async def get_default_currency_for_user(self, user_id: int) -> Optional[Currency]:
