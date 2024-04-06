@@ -16,6 +16,14 @@ def setup_logging(
     :param logging_level_root: logging level for the whole application
     :return:
     """
+
+    if not os.path.exists(config.LOG_DIRECTORY):
+        os.makedirs(config.LOG_DIRECTORY)
+
+    log_filename = config.LOG_FILENAME
+    if not log_filename.endswith('.log'):
+        log_filename = f"{log_filename}.log"
+
     logging.getLogger('sqlalchemy').setLevel(logging_level_sqlalchemy)
 
     logger = logging.getLogger()
@@ -27,7 +35,7 @@ def setup_logging(
     )
 
     file_handler = RotatingFileHandler(
-        filename=os.path.join(config.LOG_DIRECTORY, config.LOG_FILENAME),
+        filename=os.path.join(config.LOG_DIRECTORY, log_filename),
         maxBytes=config.LOG_MAXBYTES,
         backupCount=config.LOG_BACKUPS,
         delay=True,

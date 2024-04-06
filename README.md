@@ -54,4 +54,5 @@ TBS.
 - Get a bot token from [BotFather](https://t.me/botfather)
 - Create an `.env` file in the project root with bot token and other variables specified in `bot.config.Settings`
 - Install `poetry` and run `poetry install` command in project root
+- Activate the virtual environment with `poetry shell`
 - Run `bot/main.py` with `python3 -m bot.main` from the project root
