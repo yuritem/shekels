@@ -18,8 +18,8 @@ router = Router()
 )
 async def cmd_list_categories(message: Message, repo: Repository, user: User):
     """Handles /list_categories command"""
-    categories = await get_category_list(user.user_id, repo)
-    await message.answer(f"List of categories:\n\n{categories}")
+    categories_str = await get_category_list(user.user_id, repo)
+    await message.answer(categories_str)
 
 
 @router.message(

@@ -21,8 +21,8 @@ router = Router()
 )
 async def cmd_list_transactions(message: Message, repo: Repository, user: User):
     """Handles /list_transactions command"""
-    transactions = await get_transaction_list(user.user_id, repo)
-    await message.answer(f"List of transactions:\n\n{transactions}")
+    transactions_str = await get_transaction_list(user.user_id, repo)
+    await message.answer(transactions_str)
 
 
 @router.message(

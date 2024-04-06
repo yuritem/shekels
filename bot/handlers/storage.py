@@ -18,8 +18,8 @@ router = Router()
 )
 async def cmd_list_storages(message: Message, repo: Repository, user: User):
     """Handles /list_storages command"""
-    storages = await get_storage_list(user.user_id, repo)
-    await message.answer(f"List of storages:\n\n{storages}")
+    storages_str = await get_storage_list(user.user_id, repo)
+    await message.answer(storages_str)
 
 
 @router.message(

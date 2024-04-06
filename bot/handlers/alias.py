@@ -18,8 +18,8 @@ router = Router()
 )
 async def cmd_list_aliases(message: Message, repo: Repository, user: User):
     """Handles /list_aliases command"""
-    aliases = await get_alias_list(user.user_id, repo)
-    await message.answer(f"List of aliases:\n\n{aliases}")
+    aliases_str = await get_alias_list(user.user_id, repo)
+    await message.answer(aliases_str)
 
 
 @router.message(

@@ -37,7 +37,7 @@ TBS.
 -->
 
 - [Aiogram 3.x](https://github.com/aiogram/aiogram) &mdash; telegram bot interface;
-- [PostgreSQL](https://www.postgresql.org/) &mdash; database;
+- [PostgreSQL](https://www.postgresql.org/) &mdash; RDBMS;
 - [Sqlalchemy 2.x](https://www.sqlalchemy.org/) &mdash; async ORM for Postgres;
 - [Pydantic 2.x](https://github.com/pydantic/pydantic) &mdash; data validation via models;
 - [Poetry](https://python-poetry.org/) &mdash; dependency management;
