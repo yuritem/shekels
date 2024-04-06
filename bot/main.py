@@ -1,8 +1,8 @@
 import asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
-from aiogram.fsm.storage.memory import SimpleEventIsolation
-# from aiogram.fsm.storage.redis import RedisStorage, DefaultKeyBuilder
+# from aiogram.fsm.storage.memory import SimpleEventIsolation
+from aiogram.fsm.storage.redis import RedisStorage, DefaultKeyBuilder
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 from bot.db.base import Base
@@ -29,12 +29,14 @@ async def main():
     # await drop_all_tables(engine=engine)  # Todo: remove once app is done testing
     await init_database(metadata=Base.metadata, engine=engine, session_pool=sessionmaker)
 
+    redis_storage = RedisStorage.from_url(
+        config.REDIS_DSN.unicode_string(),
+        key_builder=DefaultKeyBuilder(with_bot_id=True)
+    )
     dp = Dispatcher(
-        # storage=RedisStorage.from_url(
-        #     config.REDIS_DSN.unicode_string(),
-        #     key_builder=DefaultKeyBuilder(with_bot_id=True)
-        # ),
-        events_isolation=SimpleEventIsolation()
+        storage=redis_storage,
+        events_isolation=redis_storage.create_isolation()
+        # events_isolation = SimpleEventIsolation()
     )
 
     dp.update.middleware(DatabaseSessionMiddleware(session_pool=sessionmaker))
