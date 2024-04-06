@@ -1,5 +1,6 @@
 import asyncio
 from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import SimpleEventIsolation
 # from aiogram.fsm.storage.redis import RedisStorage, DefaultKeyBuilder
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
@@ -47,7 +48,7 @@ async def main():
         transaction.router
     )
 
-    bot = Bot(token=config.BOT_TOKEN.get_secret_value(), parse_mode='HTML')
+    bot = Bot(token=config.BOT_TOKEN.get_secret_value(), default=DefaultBotProperties(parse_mode="HTML"))
     await set_commands(bot)
 
     await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
