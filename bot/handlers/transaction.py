@@ -33,6 +33,10 @@ async def cmd_list_transactions(message: Message, repo: Repository, user: User):
         await message.answer("No transactions yet.")
 
 
+@router.message(
+    Command("list_recurrent"),
+    TransactionStates.waiting_for_new_transaction
+)
 async def cmd_list_recurrent(message: Message, repo: Repository, user: User):
     """Handles /list_recurrent command"""
     recurrent_transactions_str = await get_recurrent_transaction_list(user.user_id, repo)
