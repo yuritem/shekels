@@ -2,8 +2,9 @@ from bot.db.models import Category, Storage
 from bot.services.repository import Repository
 
 
-def _format_category(category: Category, category_default: Category) -> str:
-    return f"{category.number}. {category.name}" + " [default]" * (category.category_id == category_default.category_id)
+def _format_category(category: Category, category_default: Category | None) -> str:
+    default = " [default]" if (category_default and category.category_id == category_default.category_id) else ""
+    return f"{category.number}. {category.name}{default}"
 
 
 async def get_category_list(user_id: int, repo: Repository) -> str:
@@ -13,8 +14,8 @@ async def get_category_list(user_id: int, repo: Repository) -> str:
     return categories_str
 
 
-def _format_storage(storage: Storage, storage_default: Storage) -> str:
-    default = ' [default]' if storage.storage_id == storage_default.storage_id else ''
+def _format_storage(storage: Storage, storage_default: Storage | None) -> str:
+    default = ' [default]' if (storage_default and storage.storage_id == storage_default.storage_id) else ''
     credit = ' [credit]' if storage.is_credit else ''
     multicurrency = ' [multicurrency]' if storage.multicurrency else ''
     return f"{storage.number}. {storage.name}{credit}{multicurrency}{default}"
