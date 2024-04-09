@@ -50,9 +50,16 @@ async def cmd_list_recurrent(message: Message, repo: Repository, user: User):
     Command("add_recurrent"),
     TransactionStates.waiting_for_new_transaction
 )
-async def cmd_add_recurrent(message: Message, state: FSMContext):
-    await message.answer("New recurrent transaction name:")
-    await state.set_state(RecurrentStates.waiting_for_recurrent_name)
+async def cmd_add_recurrent(message: Message, state: FSMContext, repo: Repository, user: User):
+    storages = repo.get_storages_for_user(user.user_id)
+    categories = repo.get_categories_for_user(user.user_id)
+    if not storages:
+        await message.answer("Add at least one storage first.")
+    elif not categories:
+        await message.answer("Add at least one category first.")
+    else:
+        await message.answer("New recurrent transaction name:")
+        await state.set_state(RecurrentStates.waiting_for_recurrent_name)
 
 
 @router.message(
