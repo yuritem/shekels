@@ -66,7 +66,7 @@ class Repository:
         model_instance = r.scalar()
         return model_instance
 
-    async def _get_model_for_user(self, user_id: int, model: Type[NumberedModel]) -> Sequence[NumberedModel]:
+    async def _get_models_for_user(self, user_id: int, model: Type[NumberedModel]) -> Sequence[NumberedModel]:
         if not hasattr(model, "user_id"):
             raise ValueError(f"Model {model.__class__} does not define a column named 'user_id'")
         if not hasattr(model, "number"):
@@ -89,7 +89,7 @@ class Repository:
     async def _refresh_model_numbers_for_user(self, user_id: int, model: Type[NumberedModel]) -> None:
         if not hasattr(model, "number"):
             raise ValueError(f"Model {model.__class__} does not define a column named 'number'")
-        model_instances = await self._get_model_for_user(user_id, model=model)
+        model_instances = await self._get_models_for_user(user_id, model=model)
         for n, model_instance in enumerate(model_instances):
             model_instance.number = n + 1
             await self.session.merge(model_instance)
@@ -170,7 +170,7 @@ class Repository:
         return await self.session.merge(category)
 
     async def get_categories_for_user(self, user_id: int) -> Sequence[Category]:
-        return await self._get_model_for_user(user_id, model=Category)
+        return await self._get_models_for_user(user_id, model=Category)
 
     async def get_category_by_number_for_user(self, user_id: int, number: int) -> Optional[Category]:
         return await self._get_model_by_number_for_user(user_id, number, model=Category)
@@ -178,7 +178,7 @@ class Repository:
     async def get_max_category_number_for_user(self, user_id: int) -> int:
         return await self._get_max_model_number_for_user(user_id, model=Category)
 
-    async def update_category(self, user_id: int, number: int, name: str, factor_in: bool) -> None:
+    async def update_category_by_number_for_user(self, user_id: int, number: int, name: str, factor_in: bool) -> None:
         await self.session.execute(
             update(Category)
             .where(
@@ -191,7 +191,7 @@ class Repository:
     async def refresh_category_numbers_for_user(self, user_id: int) -> None:
         await self._refresh_model_numbers_for_user(user_id, model=Category)
 
-    async def delete_category(self, user_id: int, number: int) -> None:
+    async def delete_category_by_number_for_user(self, user_id: int, number: int) -> None:
         # todo: what to do with Transaction table?
         category = await self.get_category_by_number_for_user(user_id, number)
         if await self._model_is_default_for_user(user_id, model=Category, id_=category.category_id):
@@ -203,7 +203,8 @@ class Repository:
 
     async def set_default_category(self, user_id: int, number: int) -> Category:
         category = await self.get_category_by_number_for_user(user_id, number)
-        # todo: if not category...
+        if not category:
+            raise ValueError(f"Category with number {number} not found for user with id {user_id}")
         await self._upsert_user_default_model(user_id, model=Category, id_=category.category_id)
         return category
 
@@ -260,7 +261,7 @@ class Repository:
         return storage
 
     async def get_storages_for_user(self, user_id: int) -> Sequence[Storage]:
-        return await self._get_model_for_user(user_id, model=Storage)
+        return await self._get_models_for_user(user_id, model=Storage)
 
     async def get_storage_by_number_for_user(self, user_id: int, number: int) -> Optional[Storage]:
         return await self._get_model_by_number_for_user(user_id, number, model=Storage)
@@ -268,7 +269,7 @@ class Repository:
     async def get_max_storage_number_for_user(self, user_id: int) -> int:
         return await self._get_max_model_number_for_user(user_id, model=Storage)
 
-    async def upadte_storage(self, user_id: int, number: int, name: str) -> None:
+    async def update_storage_by_number_for_user(self, user_id: int, number: int, name: str) -> None:
         await self.session.execute(
             update(Storage)
             .where(
@@ -281,7 +282,7 @@ class Repository:
     async def refresh_storage_numbers_for_user(self, user_id: int) -> None:
         await self._refresh_model_numbers_for_user(user_id, model=Storage)
 
-    async def delete_storage(self, user_id: int, number: int) -> None:
+    async def delete_storage_by_number_for_user(self, user_id: int, number: int) -> None:
         # todo: what to do with Transaction table?
         storage = await self.get_storage_by_number_for_user(user_id, number)
         if await self._model_is_default_for_user(user_id, model=Storage, id_=storage.storage_id):
@@ -293,7 +294,8 @@ class Repository:
 
     async def set_default_storage(self, user_id: int, number: int) -> Storage:
         storage = await self.get_storage_by_number_for_user(user_id, number)
-        # todo: if not storage...
+        if not storage:
+            raise ValueError(f"Storage with number {number} not found for user with id {user_id}")
         await self._upsert_user_default_model(user_id, model=Storage, id_=storage.storage_id)
         return storage
 
@@ -328,7 +330,8 @@ class Repository:
                 aliasable_id = category.aliasable_id
         else:
             raise ValueError(f"Aliasable subtype '{subtype}' is not supported")
-        # todo: if not aliasable_id...
+        if not aliasable_id:
+            raise ValueError(f"Aliasable with number {aliasable_number} not found for user with id {user_id}")
 
         number = await self.get_max_alias_number_for_user(user_id=user_id) + 1
 
@@ -342,7 +345,7 @@ class Repository:
         return await self.session.merge(alias)
 
     async def get_aliases_for_user(self, user_id: int) -> Sequence[Alias]:
-        return await self._get_model_for_user(user_id, model=Alias)
+        return await self._get_models_for_user(user_id, model=Alias)
 
     async def get_aliases_of_subtype_for_user(self, user_id: int, aliasable_subtype: AliasableSubtype) -> Sequence[Alias]:
         r = await self.session.execute(
@@ -408,7 +411,7 @@ class Repository:
     async def refresh_alias_numbers_for_user(self, user_id: int) -> None:
         await self._refresh_model_numbers_for_user(user_id, model=Alias)
 
-    async def delete_alias(self, user_id: int, number: int) -> None:
+    async def delete_alias_by_number_for_user(self, user_id: int, number: int) -> None:
         alias = self.get_alias_by_number_for_user(user_id, number)
         await self.session.delete(alias)
         await self.session.flush()
@@ -440,7 +443,8 @@ class Repository:
 
     async def set_default_currency(self, user_id: int, alpha_code: str) -> Currency:
         currency = await self.get_currency_by_alpha_code(alpha_code)
-        # todo: if not currency...
+        if not currency:
+            raise ValueError(f"Currency with alpha code {alpha_code} not found")
         await self._upsert_user_default_model(user_id, model=Currency, id_=currency.currency_id)
         return currency
 
@@ -540,7 +544,26 @@ class Repository:
         )
         return r.scalars().all()
 
-    async def update_recurrent_transaction(
+    async def get_recurrent_transactions_with_names_for_user(self, user_id: int) -> List[Dict]:
+        r = await self.session.execute(
+            select(
+                Recurrent,
+                Category.name.label("category_name"),
+                Storage.name.label("storage_name"),
+                Currency.symbol.label("currency_symbol"),
+                Currency.alpha_code.label("currency_alpha_code")
+            )
+            .join(Category, Recurrent.category_id == Category.category_id)
+            .join(Storage, Recurrent.storage_id == Storage.storage_id)
+            .join(Currency, Recurrent.currency_id == Currency.currency_id)
+            .where(Recurrent.user_id == user_id)
+        )
+        return [row._asdict() for row in r.all()]
+
+    async def get_recurrent_transaction_by_number_for_user(self, user_id: int, number: int) -> Optional[Recurrent]:
+        return await self._get_model_by_number_for_user(user_id, number, model=Recurrent)
+
+    async def update_recurrent_transaction_next_timestamp(
             self,
             recurrent_id: int,
             next_timestamp: datetime,
@@ -548,6 +571,33 @@ class Repository:
         recurrent_transaction = await self.session.get(Recurrent, recurrent_id)
         recurrent_transaction.next_timestamp = next_timestamp
         await self.session.merge(recurrent_transaction)
+
+    async def update_recurrent_transaction_by_number_for_user(
+            self,
+            user_id: int,
+            number: int,
+            name: str,
+            amount: float,
+    ) -> None:
+        recurrent_transaction = await self.get_recurrent_transaction_by_number_for_user(user_id, number)
+        if not recurrent_transaction:
+            raise ValueError("Recurrent transaction not found.")
+        await self._renew_recurrent_transaction(recurrent_transaction)
+        recurrent_transaction.name = name
+        recurrent_transaction.amount = amount
+        await self.session.merge(recurrent_transaction)
+
+    async def refresh_recurrent_numbers_for_user(self, user_id: int) -> None:
+        await self._refresh_model_numbers_for_user(user_id, model=Recurrent)
+
+    async def delete_recurrent_transaction_by_number_for_user(self, user_id: int, number: int) -> None:
+        recurrent_transaction = await self.get_recurrent_transaction_by_number_for_user(user_id, number)
+        if not recurrent_transaction:
+            raise ValueError("Recurrent transaction not found.")
+        await self._renew_recurrent_transaction(recurrent_transaction)
+        await self.session.delete(recurrent_transaction)
+        await self.session.flush()
+        await self.refresh_recurrent_numbers_for_user(user_id)
 
     async def _renew_recurrent_transaction(self, recurrent_transaction: Recurrent) -> None:
         timestamps, next_timestamp = recurrent_timestamps(
@@ -568,11 +618,11 @@ class Repository:
                 )
                 for timestamp in timestamps
             ]
-            await self.update_recurrent_transaction(recurrent_transaction.recurrent_id, next_timestamp)
+            await self.update_recurrent_transaction_next_timestamp(recurrent_transaction.recurrent_id, next_timestamp)
 
             self.session.add_all(transactions)
 
-    async def renew_recurrent_transactions(self, user_id: int) -> None:
+    async def _renew_recurrent_transactions(self, user_id: int) -> None:
         recurrent_transactions = await self.get_recurrent_transactions_for_user(user_id)
         for recurrent_transaction in recurrent_transactions:
             await self._renew_recurrent_transaction(recurrent_transaction)

@@ -19,7 +19,10 @@ router = Router()
 async def cmd_list_categories(message: Message, repo: Repository, user: User):
     """Handles /list_categories command"""
     categories_str = await get_category_list(user.user_id, repo)
-    await message.answer(categories_str)
+    if categories_str:
+        await message.answer(f"List of categories:\n\n{categories_str}")
+    else:
+        await message.answer("No categories yet.")
 
 
 @router.message(
@@ -38,7 +41,8 @@ async def cmd_add_category(message: Message, state: FSMContext):
 )
 async def category_name_to_add(message: Message, state: FSMContext):
     """Handles category_name entry after /add_category command"""
-    await state.update_data({"category_name": message.text})
+    category_name = message.text
+    await state.update_data({"category_name": category_name})
     await message.answer(f"Should we account for this category when calculating balance?")
     await state.set_state(CategoryStates.waiting_for_new_category_factor_in)
 
@@ -63,9 +67,12 @@ async def category_factor_in_to_add(message: Message, state: FSMContext, repo: R
 )
 async def cmd_edit_category(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles /edit_category command"""
-    categories = await get_category_list(user.user_id, repo)
-    await message.answer(f"Provide category number to edit:\n\n{categories}")
-    await state.set_state(CategoryStates.waiting_for_category_number_to_edit)
+    categories_str = await get_category_list(user.user_id, repo)
+    if categories_str:
+        await message.answer(f"Provide category number to edit:\n\n{categories_str}")
+        await state.set_state(CategoryStates.waiting_for_category_number_to_edit)
+    else:
+        await message.answer("No categories yet.")
 
 
 @router.message(
@@ -75,8 +82,8 @@ async def cmd_edit_category(message: Message, state: FSMContext, repo: Repositor
 async def category_number_to_edit(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles category_number entry after /edit_category command"""
     category_number = int(message.text)
-    max_category_number = await repo.get_max_category_number_for_user(user.user_id)
-    if 1 <= category_number <= max_category_number:
+    category = await repo.get_category_by_number_for_user(user.user_id, category_number)
+    if category:
         await state.update_data({"category_number": category_number})
         await message.answer("New name for the category:")
         await state.set_state(CategoryStates.waiting_for_edited_category_name)
@@ -90,7 +97,8 @@ async def category_number_to_edit(message: Message, state: FSMContext, repo: Rep
 )
 async def category_name_to_edit(message: Message, state: FSMContext):
     """Handles category_name entry in the process of /edit_category command"""
-    await state.update_data({"category_name": message.text})
+    category_name = message.text
+    await state.update_data({"category_name": category_name})
     await message.answer(f"Should we account for this category when calculating balance?")
     await state.set_state(CategoryStates.waiting_for_edited_category_factor_in)
 
@@ -105,7 +113,12 @@ async def category_factor_in_to_edit(message: Message, state: FSMContext, repo: 
     category_name = state_data.get("category_name")
     category_number = state_data.get("category_number")
     factor_in = YesNoFilter.map[message.text.lower()]
-    await repo.update_category(user_id=user.user_id, number=category_number, name=category_name, factor_in=factor_in)
+    await repo.update_category_by_number_for_user(
+        user_id=user.user_id,
+        number=category_number,
+        name=category_name,
+        factor_in=factor_in
+    )
     await message.answer("Category edited!")
     await state.set_state(TransactionStates.waiting_for_new_transaction)
 
@@ -116,9 +129,12 @@ async def category_factor_in_to_edit(message: Message, state: FSMContext, repo: 
 )
 async def cmd_delete_category(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles /delete_category command"""
-    categories = await get_category_list(user.user_id, repo)
-    await message.answer(f"Provide category number to delete:\n\n{categories}")
-    await state.set_state(CategoryStates.waiting_for_category_number_to_delete)
+    categories_str = await get_category_list(user.user_id, repo)
+    if categories_str:
+        await message.answer(f"Provide category number to delete:\n\n{categories_str}")
+        await state.set_state(CategoryStates.waiting_for_category_number_to_delete)
+    else:
+        await message.answer("No categories yet.")
 
 
 @router.message(
@@ -128,9 +144,9 @@ async def cmd_delete_category(message: Message, state: FSMContext, repo: Reposit
 async def category_number_to_delete(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles category_number entry after /delete_category command"""
     category_number = int(message.text)
-    max_category_number = await repo.get_max_category_number_for_user(user.user_id)
-    if 1 <= category_number <= max_category_number:
-        await repo.delete_category(user.user_id, category_number)
+    category = await repo.get_category_by_number_for_user(user.user_id, category_number)
+    if category:
+        await repo.delete_category_by_number_for_user(user.user_id, category_number)
         await message.answer(f"Category deleted.")
         await state.set_state(TransactionStates.waiting_for_new_transaction)
     else:
@@ -143,9 +159,12 @@ async def category_number_to_delete(message: Message, state: FSMContext, repo: R
 )
 async def cmd_set_default_category(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles /set_default_category command"""
-    categories = await get_category_list(user.user_id, repo)
-    await message.answer(f"Provide category number to set as default:\n\n{categories}")
-    await state.set_state(CategoryStates.waiting_for_category_number_to_set_default)
+    categories_str = await get_category_list(user.user_id, repo)
+    if categories_str:
+        await message.answer(f"Provide category number to set as default:\n\n{categories_str}")
+        await state.set_state(CategoryStates.waiting_for_category_number_to_set_default)
+    else:
+        await message.answer("No categories yet.")
 
 
 @router.message(
@@ -155,8 +174,8 @@ async def cmd_set_default_category(message: Message, state: FSMContext, repo: Re
 async def category_number_to_set_default(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles category_number entry after /set_default_category command"""
     category_number = int(message.text)
-    max_category_number = await repo.get_max_category_number_for_user(user.user_id)
-    if 1 <= category_number <= max_category_number:
+    category = await repo.get_category_by_number_for_user(user.user_id, category_number)
+    if category:
         category = await repo.set_default_category(user.user_id, category_number)
         await message.answer(f"Category '{category.name}' is now default!")
         await state.set_state(TransactionStates.waiting_for_new_transaction)

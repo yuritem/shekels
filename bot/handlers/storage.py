@@ -19,7 +19,10 @@ router = Router()
 async def cmd_list_storages(message: Message, repo: Repository, user: User):
     """Handles /list_storages command"""
     storages_str = await get_storage_list(user.user_id, repo)
-    await message.answer(storages_str)
+    if storages_str:
+        await message.answer(f"List of storages:\n\n{storages_str}")
+    else:
+        await message.answer("No storages yet.")
 
 
 @router.message(
@@ -38,7 +41,8 @@ async def cmd_add_storage(message: Message, state: FSMContext):
 )
 async def storage_name_to_add(message: Message, state: FSMContext):
     """Handles storage_name entry after /add_storage command"""
-    await state.update_data({"storage_name": message.text})
+    storage_name = message.text
+    await state.update_data({"storage_name": storage_name})
     await message.answer("Does this storage have a billing day?")
     await state.set_state(StorageStates.waiting_for_new_storage_is_credit_flag)
 
@@ -129,9 +133,12 @@ async def storage_currency_alpha_code(message: Message, state: FSMContext, repo:
 )
 async def cmd_edit_storage(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles /edit_storage command"""
-    storages = await get_storage_list(user.user_id, repo)
-    await message.answer(f"Provide storage number to edit:\n\n{storages}")
-    await state.set_state(StorageStates.waiting_for_storage_number_to_edit)
+    storages_str = await get_storage_list(user.user_id, repo)
+    if storages_str:
+        await message.answer(f"Provide storage number to edit:\n\n{storages_str}")
+        await state.set_state(StorageStates.waiting_for_storage_number_to_edit)
+    else:
+        await message.answer("No storages yet.")
 
 
 @router.message(
@@ -141,8 +148,8 @@ async def cmd_edit_storage(message: Message, state: FSMContext, repo: Repository
 async def storage_number_to_edit(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles storage_number entry in the process of /edit_storage command"""
     storage_number = int(message.text)
-    max_storage_number = await repo.get_max_storage_number_for_user(user.user_id)
-    if 1 <= storage_number <= max_storage_number:
+    storage = await repo.get_storage_by_number_for_user(user_id=user.user_id, number=storage_number)
+    if storage:
         await state.update_data({"storage_number": storage_number})
         await message.answer("New storage name:")
         await state.set_state(StorageStates.waiting_for_edited_storage_name)
@@ -159,7 +166,7 @@ async def storage_name_to_edit(message: Message, state: FSMContext, repo: Reposi
     state_data = await state.get_data()
     storage_number = state_data.get("storage_number")
     storage_name = message.text
-    await repo.upadte_storage(user_id=user.user_id, number=storage_number, name=storage_name)
+    await repo.update_storage_by_number_for_user(user_id=user.user_id, number=storage_number, name=storage_name)
     await message.answer("Storage edited!")
     await state.set_state(TransactionStates.waiting_for_new_transaction)
 
@@ -170,10 +177,12 @@ async def storage_name_to_edit(message: Message, state: FSMContext, repo: Reposi
 )
 async def cmd_delete_storage(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles /delete_storage command"""
-    storages = await get_storage_list(user.user_id, repo)
-    await message.answer(f"Provide storage number to delete:\n\n{storages}")
-    await state.set_state(StorageStates.waiting_for_storage_number_to_delete)
-    ...
+    storages_str = await get_storage_list(user.user_id, repo)
+    if storages_str:
+        await message.answer(f"Provide storage number to delete:\n\n{storages_str}")
+        await state.set_state(StorageStates.waiting_for_storage_number_to_delete)
+    else:
+        await message.answer("No storages yet.")
 
 
 @router.message(
@@ -183,9 +192,9 @@ async def cmd_delete_storage(message: Message, state: FSMContext, repo: Reposito
 async def storage_number_to_delete(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles storage_number entry after /delete_storage command"""
     storage_number = int(message.text)
-    max_storage_number = await repo.get_max_storage_number_for_user(user.user_id)
-    if 1 <= storage_number <= max_storage_number:
-        await repo.delete_storage(user_id=user.user_id, number=storage_number)
+    storage = await repo.get_storage_by_number_for_user(user_id=user.user_id, number=storage_number)
+    if storage:
+        await repo.delete_storage_by_number_for_user(user_id=user.user_id, number=storage_number)
         await message.answer(f"Storage deleted.")
         await state.set_state(TransactionStates.waiting_for_new_transaction)
     else:
@@ -198,9 +207,12 @@ async def storage_number_to_delete(message: Message, state: FSMContext, repo: Re
 )
 async def cmd_set_default_storage(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles /set_default_storage command"""
-    storages = await get_storage_list(user.user_id, repo)
-    await message.answer(f"Provide storage number to set as default:\n\n{storages}")
-    await state.set_state(StorageStates.waiting_for_storage_number_to_set_default)
+    storages_str = await get_storage_list(user.user_id, repo)
+    if storages_str:
+        await message.answer(f"Provide storage number to set as default:\n\n{storages_str}")
+        await state.set_state(StorageStates.waiting_for_storage_number_to_set_default)
+    else:
+        await message.answer("No storages yet.")
 
 
 @router.message(
@@ -210,8 +222,8 @@ async def cmd_set_default_storage(message: Message, state: FSMContext, repo: Rep
 async def storage_number_to_set_default(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles storage_number entry after /set_default_storage command"""
     storage_number = int(message.text)
-    max_storage_number = await repo.get_max_storage_number_for_user(user.user_id)
-    if 1 <= storage_number <= max_storage_number:
+    storage = await repo.get_storage_by_number_for_user(user_id=user.user_id, number=storage_number)
+    if storage:
         storage = await repo.set_default_storage(user.user_id, number=storage_number)
         await message.answer(f"Storage '{storage.name}' is now default!")
         await state.set_state(TransactionStates.waiting_for_new_transaction)

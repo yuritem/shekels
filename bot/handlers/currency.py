@@ -22,7 +22,7 @@ async def cmd_set_default_currency(message: Message, state: FSMContext):
 
 @router.message(CurrencyStates.waiting_for_currency_alphacode)
 async def currency_alphacode(message: Message, state: FSMContext, repo: Repository, user: User):
-    """Handles currency_alphacode entry in the process of /add_alias command"""
+    """Handles currency_alphacode entry in the process of /set_default_currency command"""
     alpha_code = message.text.upper()
     currency = await repo.get_currency_by_alpha_code(alpha_code)
     if currency:

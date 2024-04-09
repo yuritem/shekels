@@ -214,6 +214,7 @@ class Recurrent(Base):
     storage_id: Mapped[int] = mapped_column(ForeignKey("storage.storage_id"), nullable=False)
     category_id: Mapped[int] = mapped_column(ForeignKey("category.category_id"), nullable=False)
     currency_id: Mapped[int] = mapped_column(ForeignKey("currency.currency_id"), nullable=False)
+    number: Mapped[int] = mapped_column(INTEGER, nullable=False)
     name: Mapped[str] = mapped_column(VARCHAR(40), nullable=False)
     amount: Mapped[float] = mapped_column(NUMERIC(precision=15, scale=2), nullable=False)
     start_timestamp: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)

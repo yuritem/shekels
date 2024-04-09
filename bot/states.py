@@ -60,4 +60,9 @@ class RecurrentStates(StatesGroup):
     waiting_for_recurrent_category = State()
     waiting_for_recurrent_timestamp = State()
     waiting_for_recurrent_periodicity = State()
-    # todo: edit & delete
+    # delete
+    waiting_for_recurrent_number_to_delete = State()
+    # edit
+    waiting_for_recurrent_number_to_edit = State()
+    waiting_for_edited_recurrent_name = State()
+    waiting_for_edited_recurrent_amount = State()

@@ -19,7 +19,10 @@ router = Router()
 async def cmd_list_aliases(message: Message, repo: Repository, user: User):
     """Handles /list_aliases command"""
     aliases_str = await get_alias_list(user.user_id, repo)
-    await message.answer(aliases_str)
+    if aliases_str:
+        await message.answer(aliases_str)
+    else:
+        await message.answer("No aliases yet.")
 
 
 @router.message(
@@ -116,9 +119,12 @@ async def alias_name(message: Message, state: FSMContext, repo: Repository, user
 )
 async def cmd_delete_alias(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles /delete_alias command"""
-    aliases = await get_alias_list(user.user_id, repo)
-    await message.answer(f"Provide alias number to delete:\n\n{aliases}")
-    await state.set_state(AliasStates.waiting_for_alias_number_to_delete)
+    aliases_str = await get_alias_list(user.user_id, repo)
+    if aliases_str:
+        await message.answer(f"Provide alias number to delete:\n\n{aliases_str}")
+        await state.set_state(AliasStates.waiting_for_alias_number_to_delete)
+    else:
+        await message.answer("No aliases yet.")
 
 
 @router.message(
@@ -128,9 +134,9 @@ async def cmd_delete_alias(message: Message, state: FSMContext, repo: Repository
 async def alias_number_to_delete(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles number entry after /delete_alias command"""
     alias_number = int(message.text)
-    max_alias_number = await repo.get_max_alias_number_for_user(user.user_id)
-    if 1 <= alias_number <= max_alias_number:
-        await repo.delete_alias(user.user_id, alias_number)
+    alias = await repo.get_alias_by_number_for_user(user.user_id, alias_number)
+    if alias:
+        await repo.delete_alias_by_number_for_user(user.user_id, alias_number)
         await message.answer("Alias deleted.")
         await state.set_state(TransactionStates.waiting_for_new_transaction)
     else:

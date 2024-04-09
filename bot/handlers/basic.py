@@ -77,4 +77,14 @@ async def cmd_cancel(message: Message, state: FSMContext):
 )
 async def cmd_balance(message: Message):
     """Handles /balance command"""
-    await message.answer("TBD")
+
+    await message.answer("TBS")
+
+
+@router.message(
+    Command("report"),
+    TransactionStates.waiting_for_new_transaction
+)
+async def cmd_report(message: Message):
+    """Handles /report command"""
+    await message.answer("TBS")
