@@ -29,4 +29,4 @@ class UserMiddleware(BaseMiddleware):
             return await handler(message, data)
         else:
             pass  # todo: log: banned user tried to access db
-            # todo: ban filter on update middleware?
+            # todo: ban filter on `update` middleware?

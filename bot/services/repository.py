@@ -119,7 +119,7 @@ class Repository:
         return await self.session.merge(storage_currency)
 
     async def _model_is_default_for_user(self, user_id: int, model: Type[ModelWithDefault], id_: int) -> bool:
-        model_id_column = model.__name__ + "_id"
+        model_id_column = model.__tablename__ + "_id"
         user_default = await self.get_user_default(user_id)
         if not user_default or getattr(user_default, model_id_column) != id_:
             return False
@@ -131,7 +131,7 @@ class Repository:
             model: Type[ModelWithDefault],
             id_: int | None
     ) -> UserDefault:
-        model_id_column = model.__name__ + "_id"
+        model_id_column = model.__tablename__ + "_id"
         user_default = await self.get_user_default(user_id)
         if user_default is None:
             user_default = UserDefault(user_id=user_id)
