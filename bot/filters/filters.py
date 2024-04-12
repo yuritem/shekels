@@ -34,6 +34,12 @@ class YesNoFilter(BaseFilter):
 
 class PeriodicityFilter(BaseFilter):
     periodicity_pattern = re.compile(r"(\d+)([dwmy])")
+    map = {
+        'd': 'day',
+        'w': 'week',
+        'm': 'month',
+        'y': 'year'
+    }
 
     async def __call__(self, message: Message) -> bool:
         return re.fullmatch(self.periodicity_pattern, message.text) is not None

@@ -143,6 +143,7 @@ async def recurrent_category_number(message: Message, state: FSMContext, user: U
 async def recurrent_periodicity(message: Message, state: FSMContext):
     """Handles recurrent_periodicity entry in the process of /add_recurrent command"""
     period, period_unit = re.fullmatch(PeriodicityFilter.periodicity_pattern, message.text).groups()
+    period_unit = PeriodicityFilter.map[period_unit]
     period = int(period)
     await state.update_data({"recurrent_period": period, "recurrent_period_unit": period_unit})
     await message.answer("Provide the recurring transaction's start datetime in the 'YYYY-MM-DD HH:MM' format:")
