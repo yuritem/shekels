@@ -57,9 +57,9 @@ async def get_transaction_list(user_id: int, repo: Repository) -> str:
 
 def _format_recurrent_transaction(rt: dict) -> str:
     return (
-        f"{rt['number']}. {rt['name']}: "
+        f"{rt['Recurrent'].number}. {rt['Recurrent'].name}: "
         f"{rt['Recurrent'].amount:.2f} {rt['currency_symbol']} "
-        f"[{rt['period']}{rt['period_unit']}] | "
+        f"[{rt['Recurrent'].period}{rt['Recurrent'].period_unit[0].lower()}] | "
         f"{rt['storage_name']} | "
         f"({rt['category_name']})"
     )
