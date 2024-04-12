@@ -3,6 +3,15 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 
+def assume_sign(money: str) -> float:
+    """Assumes negative sign if not explicitly specified."""
+    if '+' in money or '-' in money:
+        money = float(money)
+    else:
+        money = -float(money)  # negative amount by default
+    return money
+
+
 def split_float_conserve_sum(money: float, parts: int) -> list[float]:
     """
         Splits a float `money` into `parts` parts, conserving the sum.

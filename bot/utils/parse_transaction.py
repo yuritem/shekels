@@ -6,6 +6,7 @@ from bot.filters.filters import TransactionFilter
 from bot.errors import TransacionParsingError
 from bot.services.repository import Repository
 from bot.db.model_types import AliasableModel
+from bot.utils.transaction import assume_sign
 
 
 async def _aliasable_model(
@@ -84,10 +85,7 @@ async def parse_and_add_transactions(text: str, user_id: int, repo: Repository) 
     if not amount_total:
         raise TransacionParsingError("Amount could not be parsed. Perhaps you passed more than 2 decimal points.")
 
-    if '+' in amount_total or '-' in amount_total:
-        amount_total = float(amount_total)
-    else:
-        amount_total = -float(amount_total)  # negative amount by default
+    amount_total = assume_sign(amount_total)
 
     months = 1 if months is None else int(months)
 

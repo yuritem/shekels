@@ -10,6 +10,7 @@ from bot.db.models import User
 from bot.filters.filters import NameFilter, IntegerFilter, FloatFilter, DateTimeFilter, PeriodicityFilter
 from bot.services.repository import Repository
 from bot.states import TransactionStates, RecurrentStates
+from bot.utils.transaction import assume_sign
 from bot.utils.list_models import (
     get_transaction_list,
     get_storage_list,
@@ -81,7 +82,7 @@ async def recurrent_name(message: Message, state: FSMContext):
 )
 async def recurrent_amount(message: Message, state: FSMContext):
     """Handles recurrent_amount entry in the process of /add_recurrent command"""
-    amount = float(message.text)
+    amount = assume_sign(message.text)
     await state.update_data({"recurrent_amount": amount})
     await message.answer("Provide the recurring transaction's currency alpha code:")
     await state.set_state(RecurrentStates.waiting_for_recurrent_currency)
@@ -229,7 +230,7 @@ async def edited_recurrent_name(message: Message, state: FSMContext):
 )
 async def edited_recurrent_amount(message: Message, state: FSMContext, repo: Repository, user: User):
     """Handles recurrent_amount entry in the process of /edit_recurrent command"""
-    amount = float(message.text)
+    amount = assume_sign(message.text)
     state_data = await state.get_data()
     number = state_data.get("recurrent_number")
     name = state_data.get("recurrent_name")
