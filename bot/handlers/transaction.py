@@ -29,7 +29,7 @@ async def cmd_list_transactions(message: Message, repo: Repository, user: User):
     """Handles /list_transactions command"""
     transactions_str = await get_transaction_list(user.user_id, repo)
     if transactions_str:
-        await message.answer(transactions_str)
+        await message.answer(f"List of transactions:\n\n{transactions_str}")
     else:
         await message.answer("No transactions yet.")
 
@@ -42,7 +42,7 @@ async def cmd_list_recurrent(message: Message, repo: Repository, user: User):
     """Handles /list_recurrent command"""
     recurrent_transactions_str = await get_recurrent_transaction_list(user.user_id, repo)
     if recurrent_transactions_str:
-        await message.answer(recurrent_transactions_str)
+        await message.answer(f"List of recurrent transactions:\n\n{recurrent_transactions_str}")
     else:
         await message.answer("No recurrent transactions yet.")
 
@@ -190,8 +190,7 @@ async def edit_recurrent(message: Message, state: FSMContext, user: User, repo: 
     """Handles /edit_recurrent command"""
     recurrent_transactions_str = await get_recurrent_transaction_list(user.user_id, repo)
     if recurrent_transactions_str:
-        await message.answer(recurrent_transactions_str)
-        await message.answer("Provide the number of the recurrent transaction you want to edit:")
+        await message.answer(f"Provide recurrent transaction number to edit:\n\n{recurrent_transactions_str}")
         await state.set_state(RecurrentStates.waiting_for_recurrent_number_to_edit)
     else:
         await message.answer("No recurrent transactions yet.")
@@ -253,8 +252,7 @@ async def delete_recurrent(message: Message, state: FSMContext, user: User, repo
     """Handles /delete_recurrent command"""
     recurrent_transactions_str = await get_recurrent_transaction_list(user.user_id, repo)
     if recurrent_transactions_str:
-        await message.answer(recurrent_transactions_str)
-        await message.answer("Provide the number of the recurrent transaction you want to delete:")
+        await message.answer(f"Provide recurrent transaction number to delete:\n\n{recurrent_transactions_str}")
         await state.set_state(RecurrentStates.waiting_for_recurrent_number_to_delete)
     else:
         await message.answer("No recurrent transactions yet.")

@@ -51,7 +51,6 @@ async def get_transaction_list(user_id: int, repo: Repository) -> str:
     if not transactions:
         return "No transactions yet."
     transactions_str = '\n'.join([_format_transaction(t) for t in transactions])
-    transactions_str = f"List of transactions:\n\n{transactions_str}"
     return transactions_str
 
 
@@ -70,5 +69,4 @@ async def get_recurrent_transaction_list(user_id: int, repo: Repository) -> str:
     if not recurrent_transactions:
         return "No recurrent transactions yet."
     recurrent_transactions_str = '\n'.join([_format_recurrent_transaction(rt) for rt in recurrent_transactions])
-    recurrent_transactions_str = f"List of recurrent transactions:\n\n{recurrent_transactions_str}"
     return recurrent_transactions_str
