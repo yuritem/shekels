@@ -522,11 +522,14 @@ class Repository:
 
         next_timestamp = next_timestamp or start_timestamp
 
+        number = await self.get_max_recurrent_number_for_user(user_id) + 1
+
         recurrent_transaction = Recurrent(
             user_id=user_id,
             storage_id=storage_id,
             category_id=category_id,
             currency_id=currency_id,
+            number=number,
             name=name,
             amount=amount,
             start_timestamp=start_timestamp,
@@ -562,6 +565,9 @@ class Repository:
 
     async def get_recurrent_transaction_by_number_for_user(self, user_id: int, number: int) -> Optional[Recurrent]:
         return await self._get_model_by_number_for_user(user_id, number, model=Recurrent)
+
+    async def get_max_recurrent_number_for_user(self, user_id: int) -> int:
+        return await self._get_max_model_number_for_user(user_id, model=Recurrent)
 
     async def update_recurrent_transaction_next_timestamp(
             self,
