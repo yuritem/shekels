@@ -11,7 +11,7 @@ from bot.middlewares.db import DatabaseSessionMiddleware
 from bot.middlewares.user import UserMiddleware
 from bot.handlers import basic, category, alias, storage, currency, transaction
 from bot.set_commands import set_commands
-from bot.utils.db import init_database  # , drop_all_tables
+from bot.utils.db import init_database, drop_all_tables
 from bot.utils.log import setup_logging
 
 
@@ -26,17 +26,21 @@ async def main():
         engine,
         expire_on_commit=False
     )
-    # await drop_all_tables(engine=engine)  # Todo: remove once app is done testing
+    if config.RESET_POSTGRES_ON_STARTUP:
+        await drop_all_tables(engine=engine)
     await init_database(metadata=Base.metadata, engine=engine, session_pool=sessionmaker)
 
     redis_storage = RedisStorage.from_url(
         config.REDIS_DSN.unicode_string(),
         key_builder=DefaultKeyBuilder(with_bot_id=True)
     )
+    if config.RESET_REDIS_ON_STARTUP:
+        await redis_storage.redis.flushdb()
+
     dp = Dispatcher(
         storage=redis_storage,
         events_isolation=redis_storage.create_isolation()
-        # events_isolation = SimpleEventIsolation()
+        # events_isolation=SimpleEventIsolation()
     )
 
     dp.update.middleware(DatabaseSessionMiddleware(session_pool=sessionmaker))

@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     LOG_MAXBYTES: conint(ge=1, le=1_000_000_000)
     LOG_BACKUPS: conint(ge=0, le=1000)
 
+    RESET_POSTGRES_ON_STARTUP: bool
+    RESET_REDIS_ON_STARTUP: bool
+
     model_config = SettingsConfigDict(
         env_file=find_dotenv('.env'),
         env_file_encoding='utf-8',
