@@ -466,7 +466,7 @@ class Repository:
             months: int
     ) -> None:
 
-        timestamps, amounts = split_transaction(amount_total, months)
+        timestamps, amounts = await split_transaction(amount_total, months)
 
         transactions = [
             Transaction(

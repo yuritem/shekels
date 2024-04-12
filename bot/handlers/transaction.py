@@ -51,6 +51,7 @@ async def cmd_list_recurrent(message: Message, repo: Repository, user: User):
     TransactionStates.waiting_for_new_transaction
 )
 async def cmd_add_recurrent(message: Message, state: FSMContext, repo: Repository, user: User):
+    """Handles /add_recurrent command"""
     storages = repo.get_storages_for_user(user.user_id)
     categories = repo.get_categories_for_user(user.user_id)
     if not storages:
@@ -67,6 +68,7 @@ async def cmd_add_recurrent(message: Message, state: FSMContext, repo: Repositor
     NameFilter()
 )
 async def recurrent_name(message: Message, state: FSMContext):
+    """Handles recurrent_name entry after /add_recurrent command"""
     name = message.text
     await state.update_data({"recurrent_name": name})
     await message.answer("Provide amount for the recurring transaction:")
@@ -78,6 +80,7 @@ async def recurrent_name(message: Message, state: FSMContext):
     FloatFilter()
 )
 async def recurrent_amount(message: Message, state: FSMContext):
+    """Handles recurrent_amount entry in the process of /add_recurrent command"""
     amount = float(message.text)
     await state.update_data({"recurrent_amount": amount})
     await message.answer("Provide the recurring transaction's currency alpha code:")
@@ -89,6 +92,7 @@ async def recurrent_amount(message: Message, state: FSMContext):
     NameFilter()
 )
 async def recurrent_currency(message: Message, state: FSMContext, user: User, repo: Repository):
+    """Handles recurrent_currency_alpha_code entry in the process of /add_recurrent command"""
     alpha_code = message.text.upper()
     currency = await repo.get_currency_by_alpha_code(alpha_code=alpha_code)
     if currency:
@@ -105,6 +109,7 @@ async def recurrent_currency(message: Message, state: FSMContext, user: User, re
     IntegerFilter()
 )
 async def recurrent_storage_number(message: Message, state: FSMContext, user: User, repo: Repository):
+    """Handles recurrent_storage_number entry in the process of /add_recurrent command"""
     storage_number = int(message.text)
     storage = await repo.get_storage_by_number_for_user(user_id=user.user_id, number=storage_number)
     if storage:
@@ -121,6 +126,7 @@ async def recurrent_storage_number(message: Message, state: FSMContext, user: Us
     IntegerFilter()
 )
 async def recurrent_category_number(message: Message, state: FSMContext, user: User, repo: Repository):
+    """Handles recurrent_category_number entry in the process of /add_recurrent command"""
     category_number = int(message.text)
     category = await repo.get_category_by_number_for_user(user.user_id, category_number)
     if category:
@@ -134,6 +140,7 @@ async def recurrent_category_number(message: Message, state: FSMContext, user: U
     PeriodicityFilter()
 )
 async def recurrent_periodicity(message: Message, state: FSMContext):
+    """Handles recurrent_periodicity entry in the process of /add_recurrent command"""
     period, period_unit = re.fullmatch(PeriodicityFilter.periodicity_pattern, message.text).groups()
     period = int(period)
     await state.update_data({"recurrent_period": period, "recurrent_period_unit": period_unit})
@@ -146,6 +153,7 @@ async def recurrent_periodicity(message: Message, state: FSMContext):
     DateTimeFilter()
 )
 async def recurrent_timestamp(message: Message, state: FSMContext, user: User, repo: Repository):
+    """Handles recurrent_timestamp entry in the process of /add_recurrent command"""
     timestamp = datetime.strptime(message.text, '%Y-%m-%d %H:%M')
     state_data = await state.get_data()
     name = state_data.get("recurrent_name")
@@ -173,6 +181,69 @@ async def recurrent_timestamp(message: Message, state: FSMContext, user: User, r
 
 
 @router.message(
+    Command("edit_recurrent"),
+    TransactionStates.waiting_for_new_transaction
+)
+async def edit_recurrent(message: Message, state: FSMContext, user: User, repo: Repository):
+    """Handles /edit_recurrent command"""
+    recurrent_transactions_str = await get_recurrent_transaction_list(user.user_id, repo)
+    if recurrent_transactions_str:
+        await message.answer(recurrent_transactions_str)
+        await message.answer("Provide the number of the recurrent transaction you want to edit:")
+        await state.set_state(RecurrentStates.waiting_for_recurrent_number_to_edit)
+    else:
+        await message.answer("No recurrent transactions yet.")
+
+
+@router.message(
+    RecurrentStates.waiting_for_recurrent_number_to_edit,
+    IntegerFilter()
+)
+async def recurrent_number_to_edit(message: Message, state: FSMContext, user: User, repo: Repository):
+    """Handles recurrent_number entry after /edit_recurrent command"""
+    recurrent_number = int(message.text)
+    recurrent = await repo.get_recurrent_transaction_by_number_for_user(user_id=user.user_id, number=recurrent_number)
+    if recurrent:
+        await state.update_data({"recurrent_number": recurrent_number})
+        await message.answer("New recurrent transaction name:")
+        await state.set_state(RecurrentStates.waiting_for_edited_recurrent_name)
+    else:
+        pass  # filter behavior
+
+
+@router.message(
+    RecurrentStates.waiting_for_edited_recurrent_name,
+    NameFilter()
+)
+async def edited_recurrent_name(message: Message, state: FSMContext):
+    """Handles recurrent_name entry in the process of /edit_recurrent command"""
+    name = message.text
+    await state.update_data({"recurrent_name": name})
+    await message.answer("New recurring transaction amount:")
+    await state.set_state(RecurrentStates.waiting_for_edited_recurrent_amount)
+
+
+@router.message(
+    RecurrentStates.waiting_for_edited_recurrent_amount,
+    FloatFilter()
+)
+async def edited_recurrent_amount(message: Message, state: FSMContext, repo: Repository, user: User):
+    """Handles recurrent_amount entry in the process of /edit_recurrent command"""
+    amount = float(message.text)
+    state_data = await state.get_data()
+    number = state_data.get("recurrent_number")
+    name = state_data.get("recurrent_name")
+    await repo.update_recurrent_transaction_by_number_for_user(
+        user_id=user.user_id,
+        number=number,
+        name=name,
+        amount=amount
+    )
+    await message.answer("Recurrent transaction edited!")
+    await state.set_state(TransactionStates.waiting_for_new_transaction)
+
+
+@router.message(
     Command("delete_recurrent"),
     TransactionStates.waiting_for_new_transaction
 )
@@ -192,6 +263,7 @@ async def delete_recurrent(message: Message, state: FSMContext, user: User, repo
     IntegerFilter()
 )
 async def recurrent_number_to_delete(message: Message, state: FSMContext, user: User, repo: Repository):
+    """Handles recurrent_number entry after /delete_recurrent command"""
     recurrent_number = int(message.text)
     recurrent = await repo.get_recurrent_transaction_by_number_for_user(user_id=user.user_id, number=recurrent_number)
     if recurrent:
