@@ -5,7 +5,7 @@ from sqlalchemy import select, func, delete, update, union
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.db.types import RecurrentPeriodUnit
-from bot.db.model_types import NumberedModel, ModelWithDefault
+from bot.db.model_types import NumberedModel, AliasableModel, ModelWithDefault
 from bot.db.models import (
     User,
     Aliasable,
@@ -61,6 +61,18 @@ class Repository:
             .where(
                 user_id_column == user_id,
                 number_column == number
+            )
+        )
+        model_instance = r.scalar()
+        return model_instance
+
+    async def _get_model_by_aliasable_id(self, aliasable_id: int, model: Type[AliasableModel]) -> Optional[AliasableModel]:
+        aliasable_id_column = getattr(model, "aliasable_id")
+
+        r = await self.session.execute(
+            select(model)
+            .where(
+                aliasable_id_column == aliasable_id
             )
         )
         model_instance = r.scalar()
@@ -175,6 +187,9 @@ class Repository:
     async def get_category_by_number_for_user(self, user_id: int, number: int) -> Optional[Category]:
         return await self._get_model_by_number_for_user(user_id, number, model=Category)
 
+    async def get_category_by_aliasable_id(self, user_id: int, aliasable_id: int) -> Optional[Category]:
+        return await self._get_model_by_aliasable_id(aliasable_id, model=Category)
+
     async def get_max_category_number_for_user(self, user_id: int) -> int:
         return await self._get_max_model_number_for_user(user_id, model=Category)
 
@@ -265,6 +280,9 @@ class Repository:
 
     async def get_storage_by_number_for_user(self, user_id: int, number: int) -> Optional[Storage]:
         return await self._get_model_by_number_for_user(user_id, number, model=Storage)
+
+    async def get_storage_by_aliasable_id(self, user_id: int, aliasable_id: int) -> Optional[Storage]:
+        return await self._get_model_by_aliasable_id(aliasable_id, model=Storage)
 
     async def get_max_storage_number_for_user(self, user_id: int) -> int:
         return await self._get_max_model_number_for_user(user_id, model=Storage)
@@ -440,6 +458,9 @@ class Repository:
         )
         currency = r.scalar()
         return currency
+
+    async def get_currency_by_aliasable_id(self, aliasable_id: int) -> Optional[Currency]:
+        return await self._get_model_by_aliasable_id(aliasable_id=aliasable_id, model=Currency)
 
     async def set_default_currency(self, user_id: int, alpha_code: str) -> Currency:
         currency = await self.get_currency_by_alpha_code(alpha_code)

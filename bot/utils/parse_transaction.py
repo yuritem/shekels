@@ -29,7 +29,7 @@ async def _aliasable_model(
 
     for model_alias in model_aliases:
         if text_casefold == model_alias.name.casefold():
-            return await repo.session.get(model, model_alias.aliasable_id)
+            return await repo._get_model_by_aliasable_id(model_alias.aliasable_id, model)
 
     return None
 
@@ -100,6 +100,7 @@ async def parse_and_add_transactions(text: str, user_id: int, repo: Repository) 
                 " or too many parameters were specified."
             )
         slot_1, slot_2 = slot_0, slot_1
+        slot_2, slot_1 = slot_1, slot_0
 
     # options:
     # - [1] = None       [2] = None
