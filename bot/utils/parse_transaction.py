@@ -100,7 +100,6 @@ async def parse_and_add_transactions(text: str, user_id: int, repo: Repository) 
                 " or too many parameters were specified."
             )
         slot_1, slot_2 = slot_0, slot_1
-        slot_2, slot_1 = slot_1, slot_0
 
     # options:
     # - [1] = None       [2] = None
