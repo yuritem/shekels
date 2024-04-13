@@ -37,13 +37,6 @@ async def transaction(message: Message, repo: Repository, user: User):
     """
     await parse_and_add_transactions(message.text, user_id=user.user_id, repo=repo)
     await message.answer("Transaction added!")
-    transactions = await repo.get_transactions_for_user(user_id=user.user_id)
-    await message.answer('\n'.join(map(str, transactions)))
-    """
-    provided (user_id: int, category: str, storage: str, currency: str),
-    we don't know if user used any aliases in the names, we need to get their IDs from database
-    or raise an error if we fail
-    """
 
 
 @router.message(
