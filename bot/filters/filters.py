@@ -89,8 +89,8 @@ class TransactionFilter(BaseFilter):
         r"([+-]?\d+(?:\.\d{,2})?)"  # amount (required)
         r"(?:/(\d+))?"  # months for installment payments (optional)
         r"(?:\s+([\w\-.]+))?"  # currency (optional)
-        r"(?:\s+([\w\-.]+))?"  # storage 1 (optional)
-        r"(?:\s+([\w\-.]+))?"  # storage 2 (optional) / category (optional)
+        r"(?:\s+([\w\-.]+))?"  # storage (optional)
+        r"(?:\s+([\w\-.]+))?"  # category (optional)
     )
 
     async def __call__(self, message: Message) -> bool:
