@@ -97,7 +97,7 @@ async def parse_and_add_transactions(text: str, user_id: int, repo: Repository) 
             raise TransacionParsingError(
                 "Failed to parse message."
                 " Perhaps currency could not be identified"
-                " or you explicitly passed a category for a transfer between two storages."
+                " or too many parameters were specified."
             )
         slot_2, slot_1 = slot_1, slot_0
 
@@ -125,12 +125,12 @@ async def parse_and_add_transactions(text: str, user_id: int, repo: Repository) 
             category = category_
 
         else:
-            raise TransacionParsingError("Failed to parse transfer destination storage or category.")
+            raise TransacionParsingError("Failed to identify last parameter.")
 
     else:
         raise TransacionParsingError("Failed to parse storage or category.")
 
-    if currency is None or storage is None or category is None:
+    if (currency is None) or (storage is None) or (category is None):
         raise TransacionParsingError("One or more defaults missing and not passed explicitly.")
 
     await repo.add_transactions(
