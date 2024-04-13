@@ -70,8 +70,8 @@ class Alias(Base):
     user: Mapped["User"] = relationship("User", back_populates="aliases")
 
     def __repr__(self) -> str:
-        return (f"Alias(alias_id={self.alias_id!r}), user_id={self.user_id!r}, "
-                f"aliasable_id={self.aliasable_id!r}, number={self.number!r}, name={self.name!r}")
+        return (f"Alias(alias_id={self.alias_id!r}, user_id={self.user_id!r}, "
+                f"aliasable_id={self.aliasable_id!r}, number={self.number!r}, name={self.name!r})")
 
 
 class Currency(Base):
